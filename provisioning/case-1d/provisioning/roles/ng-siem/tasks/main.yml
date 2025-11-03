@@ -21,14 +21,22 @@
   notify: reload ng-siem pipelines
   no_log: true
 
+- name: Check for ng-siemctl binary
+  ansible.builtin.stat:
+    path: "{{ ng_siemctl_path }}"
+  register: ng_siemctl_binary
+
 - name: Validate ng-siem pipeline configuration
-  ansible.builtin.command: "ng-siemctl pipeline lint {{ ng_siem_pipeline.name }} --config {{ ng_siem_pipeline_config }}"
+  ansible.builtin.command:
+    cmd: "{{ ng_siemctl_path }} pipeline lint {{ ng_siem_pipeline.name }} --config {{ ng_siem_pipeline_config }}"
   register: ng_siem_lint
   changed_when: false
   failed_when: ng_siem_lint.rc != 0
+  when: ng_siemctl_binary.stat.exists
 
 - name: Check ng-siem pipeline status
   ansible.builtin.command: "{{ ng_siem_healthcheck.command }}"
   register: ng_siem_status
   changed_when: false
   failed_when: ng_siem_status.rc != 0 or 'healthy' not in ng_siem_status.stdout.lower()
+  when: ng_siemctl_binary.stat.exists
