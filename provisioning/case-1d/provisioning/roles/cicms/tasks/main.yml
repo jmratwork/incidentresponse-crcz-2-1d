@@ -57,11 +57,20 @@
     group: root
     mode: "0640"
 
+- name: Detect nginx binary for CICMS validation
+  ansible.builtin.stat:
+    path: "{{ cicms_nginx_binary_path }}"
+  register: cicms_nginx_binary
+  when: cicms_enable_nginx_checks | bool
+
 - name: Validate CICMS nginx syntax
   ansible.builtin.command: nginx -t
   register: cicms_nginx_check
   changed_when: false
   failed_when: cicms_nginx_check.rc != 0
+  when:
+    - cicms_enable_nginx_checks | bool
+    - cicms_nginx_binary.stat.exists | default(false)
 
 - name: Check CICMS health endpoint
   ansible.builtin.uri:
@@ -72,6 +81,9 @@
   register: cicms_health
   failed_when: cicms_health.status != cicms_healthcheck.status_code
   changed_when: false
+  when:
+    - cicms_enable_nginx_checks | bool
+    - cicms_nginx_binary.stat.exists | default(false)
 
 
 #Added tasks

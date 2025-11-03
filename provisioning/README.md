@@ -39,7 +39,7 @@ Use tags to execute individual components, e.g. `--tags ng_siem` to provision on
 ### `cicms`
 - **Service:** exposes the incident coordination portal with Nginx and routes traffic to the backend on `:9201`.
 - **Configuration:** `nginx-cicms.conf.j2` and `settings.json.j2` render the `cicms_nginx_site`, `cicms_tls` and `cicms_cms_settings` variables into the effective configuration and TLS secrets.
-- **Validation:** `nginx -t` and a `GET {{ cicms_healthcheck.url }}` request ensure the virtual host responds correctly.
+- **Validation:** `nginx -t` and a `GET {{ cicms_healthcheck.url }}` request ensure the virtual host responds correctly. These checks run only when the `cicms_enable_nginx_checks` flag is true and the `{{ cicms_nginx_binary_path }}` binary exists; disable the flag when CICMS relies exclusively on the Dockerised Nginx shipped with the subcase labs.
 
 ### `cti_ss`
 - **Service:** publishes a TAXII server with STIX collections used by NG-SIEM and NG-SOAR.
