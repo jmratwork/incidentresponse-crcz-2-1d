@@ -5,7 +5,7 @@ This guide explains how to instantiate the CyberRangeCZ infrastructure aligned w
 ## 1. Import the topology in KYPO/CRCZ
 
 1. Sign in to the KYPO portal with an account that can create sandboxes.
-2. Upload `provisioning/subcase-1d-topology.yml` to provision:
+2. Upload `provisioning/case-1d/topology.yml` to provision:
    - Core NG-SOC hosts (`ng-soc`, `ng-siem`, `ng-soar`).
    - Supporting services (`cti-ss`, `cicms-operator`, `playbook-library`, `telemetry-simulator`).
    - Segmented networks that emulate the SOC, automation, intelligence, coordination and telemetry zones.
@@ -38,7 +38,7 @@ ansible-galaxy collection install ansible.windows community.general
 ## 4. Execute the playbooks
 
 ```bash
-ansible-playbook -i inventory.ini provisioning/subcase-1d/site.yml
+ansible-playbook -i inventory.ini provisioning/case-1d/provisioning/playbook.yml
 ```
 
 This playbook configures the NG ecosystem by installing packages, enabling services and seeding working directories that match the operational flow described in the NG-SOC documentation. Use tags (e.g. `--tags ng_soar`) to target specific components during troubleshooting.
