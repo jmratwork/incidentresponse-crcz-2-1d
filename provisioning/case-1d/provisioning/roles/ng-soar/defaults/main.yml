@@ -1,4 +1,6 @@
 ---
+ng_soarctl_binary_path: /usr/local/bin/ng-soarctl
+
 ng_soar_queue_config: /etc/ng-soar/queues.yaml
 ng_soar_queues:
   - name: enrichment
@@ -23,3 +25,6 @@ ng_soar_integrations:
 ng_soar_healthcheck:
   url: http://127.0.0.1:8080/healthz
   status_code: 200
+
+# NOTE: Enable the ng-soar validation and health checks only when the real
+# service is deployed and accessible in the target environment.

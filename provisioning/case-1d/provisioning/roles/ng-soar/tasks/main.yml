@@ -28,11 +28,17 @@
   notify: restart ng-soar
   no_log: true
 
+- name: Check for ng-soarctl binary
+  ansible.builtin.stat:
+    path: "{{ ng_soarctl_binary_path }}"
+  register: ng_soarctl
+
 - name: Validate ng-soar queues
-  ansible.builtin.command: "ng-soarctl validate --config {{ ng_soar_queue_config }}"
+  ansible.builtin.command: "{{ ng_soarctl_binary_path }} validate --config {{ ng_soar_queue_config }}"
   register: ng_soar_validation
   changed_when: false
   failed_when: ng_soar_validation.rc != 0
+  when: ng_soarctl.stat.exists
 
 - name: Check ng-soar API health
   ansible.builtin.uri:
@@ -42,6 +48,7 @@
   register: ng_soar_health
   failed_when: ng_soar_health.status != ng_soar_healthcheck.status_code
   changed_when: false
+  when: ng_soarctl.stat.exists
 
 #Added Tasks
 - name: Install Docker prerequisites
