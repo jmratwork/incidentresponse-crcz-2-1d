@@ -1,4 +1,9 @@
 ---
+- name: Check for cacaoctl binary
+  ansible.builtin.stat:
+    path: "{{ (playbook_library_healthcheck_command | split) | first }}"
+  register: cacaoctl_binary
+
 - name: Ensure cacao group exists
   ansible.builtin.group:
     name: cacao
@@ -22,7 +27,7 @@
   loop: "{{ playbook_library_playbooks | list }}"
   loop_control:
     loop_var: playbook
-  notify: reload cacao playbooks
+  notify: "{{ cacaoctl_binary.stat.exists | ternary('reload cacao playbooks', omit) }}"
 
 - name: Publish playbook index metadata
   ansible.builtin.template:
@@ -31,10 +36,11 @@
     owner: root
     group: cacao
     mode: "0640"
-  notify: reload cacao playbooks
+  notify: "{{ cacaoctl_binary.stat.exists | ternary('reload cacao playbooks', omit) }}"
 
 - name: Validate CACAO library
   ansible.builtin.command: "{{ playbook_library_healthcheck_command }}"
   register: playbook_library_validation
   changed_when: false
   failed_when: playbook_library_validation.rc != 0
+  when: cacaoctl_binary.stat.exists
