@@ -21,11 +21,17 @@
     mode: "0640"
   notify: reload ng-soc dashboard
 
+- name: Check if ng-socctl is installed
+  ansible.builtin.stat:
+    path: /usr/bin/ng-socctl
+  register: ng_socctl
+
 - name: Validate ng-soc configuration
   ansible.builtin.command: "ng-socctl validate --config {{ ng_soc_dashboard_config }}"
   register: ng_soc_validate
   changed_when: false
   failed_when: ng_soc_validate.rc != 0
+  when: ng_socctl.stat.exists
 
 - name: Check ng-soc API status
   ansible.builtin.uri:
@@ -35,3 +41,4 @@
   register: ng_soc_health
   failed_when: ng_soc_health.status != ng_soc_healthcheck.status_code
   changed_when: false
+  when: ng_socctl.stat.exists
