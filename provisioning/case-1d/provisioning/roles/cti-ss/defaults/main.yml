@@ -17,3 +17,4 @@ cti_ss_auth:
 cti_ss_bind_host: 0.0.0.0
 cti_ss_bind_port: 9000
 cti_ss_healthcheck_command: "/usr/bin/cti-ssctl status"
+cti_ss_enable_healthchecks: false
