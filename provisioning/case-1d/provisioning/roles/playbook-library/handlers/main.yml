@@ -1,5 +1,7 @@
 ---
 - name: reload cacao playbooks
+  listen: reload cacao playbooks
   ansible.builtin.service:
     name: cacao-playbookd
     state: reloaded
+  when: cacaoctl_binary.stat.exists
