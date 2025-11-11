@@ -19,6 +19,7 @@ Automation assets for the NG-SOC ecosystem used during the playbook execution ex
 - Ansible 2.15 or newer with the `community.general` collection available. Install the `pywinrm` Python package for WinRM connectivity when managing Windows hosts from the same control node (use `pywinrm[credssp]` where CredSSP is needed).
 - Access to the hosts defined in `provisioning/case-1d/topology.yml`.
 - Secrets managed through Ansible Vault or environment variables.
+- Provide the `cti_ss_docker_password` secret (for Docker Hub authentication) via Ansible Vault or by exporting `CTI_SS_DOCKER_PASSWORD` before running the playbooks.
 
 Install the collection with:
 
