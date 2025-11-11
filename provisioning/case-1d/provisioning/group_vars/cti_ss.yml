@@ -1,0 +1,4 @@
+---
+# Sensitive credential for Docker Hub authentication used by the CTI sharing service role.
+# Replace the lookup with an encrypted secret or environment variable before running the playbook.
+cti_ss_docker_password: "{{ lookup('env', 'CTI_SS_DOCKER_PASSWORD') }}"
