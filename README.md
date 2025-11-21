@@ -33,7 +33,7 @@ See Figure 6 for the segment of the CYNET activity diagram relevant to this subc
 ## Key files
 
 - `training_linear.json`: lists the learning modules that support the NG-SOC automation scenario in subcase 1d, including step-by-step activities and the tools involved.
-- `topology.yml`: describes the CyberRangeCZ components relevant to the NG-SOC exercises and how they integrate with the operational tooling.
+- `topology.yml`: KYPO-compatible topology for the NG-SOC exercise sandbox, matching the provisioning descriptors.
 - `docs/`: support materials and complementary guides. `docs/provisioning-guide.md` explains how to deploy the infrastructure required for subcase 1d.
 - `inventory.sample`: template inventory with placeholder credentials; load secrets at runtime via Ansible Vault or environment variables instead of committing them to version control.
 - `provisioning/`: KYPO/CRCZ topology files and Ansible playbooks that replicate the infrastructure defined in the CYNET activity diagram for the 1d flow.
@@ -50,7 +50,7 @@ pytest
 The tests verify that:
 
 - `training_linear.json` follows the expected layout, with sequential steps and non-empty metadata for each activity.
-- `topology.yml` only references components defined within the document.
+- `topology.yml` and the provisioning topologies only include KYPO sandbox fields and consistent host/network mappings.
 - The KYPO topologies in `provisioning/` reference valid hosts, routers and networks in their mapping sections.
 
 ## Credential management

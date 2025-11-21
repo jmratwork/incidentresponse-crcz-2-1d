@@ -52,38 +52,46 @@ def test_training_linear_structure(training_data):
         )
 
 
-@pytest.fixture(scope="module")
-def topology_data():
-    topology_file = REPO_ROOT / "topology.yml"
-    with topology_file.open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def test_topology_components_are_consistent(topology_data):
-    assert set(topology_data.keys()) >= {"name", "version", "components"}
-    assert isinstance(topology_data["components"], dict) and topology_data["components"]
-    components = topology_data["components"]
-
-    for component, attrs in components.items():
-        assert "purpose" in attrs and attrs["purpose"].strip()
-        integrations = attrs.get("integrations", [])
-        assert isinstance(integrations, list)
-        for target in integrations:
-            assert target in components, (
-                f"Component '{component}' integrates with unknown target '{target}'"
-            )
-
-
 @pytest.mark.parametrize(
     "topology_path",
-    [REPO_ROOT / "provisioning" / "case-1d" / "topology.yml"],
+    [
+        REPO_ROOT / "topology.yml",
+        REPO_ROOT / "provisioning" / "case-1d" / "topology.yml",
+    ],
 )
-def test_provisioning_topologies(topology_path):
+def test_kypo_topologies(topology_path):
     with topology_path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    for key in ("name", "hosts", "routers", "networks", "net_mappings", "router_mappings"):
-        assert key in data, f"Missing '{key}' in {topology_path.name}"
+    required_keys = {
+        "name",
+        "hosts",
+        "routers",
+        "networks",
+        "net_mappings",
+        "router_mappings",
+        "groups",
+    }
+    assert set(data.keys()) == required_keys, (
+        f"{topology_path.name} must only contain KYPO keys: {sorted(required_keys)}"
+    )
+
+    assert isinstance(data["hosts"], list) and data["hosts"], (
+        f"{topology_path.name} must list at least one host"
+    )
+    assert isinstance(data["routers"], list) and data["routers"], (
+        f"{topology_path.name} must list at least one router"
+    )
+    assert isinstance(data["networks"], list) and data["networks"], (
+        f"{topology_path.name} must list at least one network"
+    )
+    assert isinstance(data["net_mappings"], list) and data["net_mappings"], (
+        f"{topology_path.name} must include host network mappings"
+    )
+    assert isinstance(data["router_mappings"], list) and data["router_mappings"], (
+        f"{topology_path.name} must include router network mappings"
+    )
+    assert isinstance(data["groups"], list), f"{topology_path.name} groups must be a list"
 
     hosts = {host["name"] for host in data["hosts"]}
     routers = {router["name"] for router in data["routers"]}
