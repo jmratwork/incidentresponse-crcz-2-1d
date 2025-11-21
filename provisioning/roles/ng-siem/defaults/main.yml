@@ -24,3 +24,34 @@ ng_siem_pipeline:
       index: rep-alerts-{{ '%Y.%m.%d' | strftime }}
 ng_siem_healthcheck:
   command: "/usr/bin/ng-siemctl pipeline status rep_ingest"
+
+ng_siem_containerized: true
+
+ng_siem_compose_source:
+  type: smb
+  share: "//10.250.232.198/shared"
+  mount_point: /mnt/ng-siem
+  mount_opts: guest,vers=3.0
+  compose_path: /mnt/ng-siem/ng-siem/docker-compose.yml
+  archive_path: /mnt/ng-siem/ng-siem/docker-compose.zip
+  archive: false
+  destination_dir: /opt/ng-siem
+
+ng_siem_registry:
+  url: https://index.docker.io/v1/
+  username: ""
+  password: ""
+
+ng_siem_external_services:
+  misp:
+    host: 10.250.10.50
+    port: 443
+    api_base: https://misp.internal
+  dfir_iris:
+    host: 10.250.10.60
+    port: 443
+    api_base: https://dfir-iris.internal
+  cortex:
+    host: 10.250.10.70
+    port: 9001
+    api_base: http://cortex.internal:9001

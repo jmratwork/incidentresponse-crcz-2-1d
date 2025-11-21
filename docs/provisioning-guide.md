@@ -51,3 +51,53 @@ This playbook configures the NG ecosystem by installing packages, enabling servi
 - Confirm that NG-SOAR updates the incident status in CICMS Operator and that CTI-SS enrichment artifacts are stored in `/opt/cti-ss/share`.
 
 Following these steps ensures the infrastructure mirrors the flow of subcase 1d and is ready for the exercises described in `docs/subcase-1d-playbook-automation.md`.
+
+## 6. Reusing the Docker deployment tasks from `ng-soc-ansible`
+
+The NG-SIEM and NG-SOAR roles import the container deployment snippets maintained in the `ng-soc-ansible` repository (branch `central`). The logic lives locally under `provisioning/roles/ng-siem/tasks/docker-deploy.yml` and `provisioning/roles/ng-soar/tasks/docker-deploy.yml` and mirrors the upstream tasks that install Docker, mount the SMB share, uncompress the compose bundle and run `docker compose`.
+
+To refresh them from upstream when a new release is published:
+
+```bash
+git clone --branch central https://github.com/CyberRangeCZ/ng-soc-ansible.git /tmp/ng-soc-ansible
+cp /tmp/ng-soc-ansible/roles/ng-siem/tasks/docker-deploy.yml provisioning/roles/ng-siem/tasks/
+cp /tmp/ng-soc-ansible/roles/ng-soar/tasks/docker-deploy.yml provisioning/roles/ng-soar/tasks/
+```
+
+Both roles expose a `*_compose_source` structure that controls the SMB path (or an alternate source), whether the compose file is compressed, and the destination directory. Set `ng_siem_containerized` or `ng_soar_containerized` to `false` to skip the import entirely when you want to rely on pre-installed services instead of the Dockerised lab images.
+
+## 7. Injecting IP/port variables for external services
+
+NG-SIEM and NG-SOAR consume external services such as MISP, DFIR-IRIS and Cortex. Default endpoints now reside in `provisioning/group_vars/ng_stack.yml` so a single set of IP/port values can be shared across hosts. Override them per environment through `group_vars`, `host_vars` or the CLI, for example:
+
+```bash
+ansible-playbook -i inventory.ini provisioning/case-1d/provisioning/playbook.yml \
+  --extra-vars "ng_external_services.misp.host=192.168.50.15 ng_external_services.dfir_iris.port=8443"
+```
+
+or by setting host-specific values through `host_vars`:
+
+```
+# provisioning/host_vars/ng-siem.yml
+ng_external_services:
+  misp:
+    host: 10.0.0.25
+    port: 8443
+
+# provisioning/host_vars/ng-soar.yml
+ng_external_services:
+  dfir_iris:
+    host: 10.0.0.30
+    port: 443
+```
+
+The roles inherit these mappings via `ng_siem_external_services` and `ng_soar_external_services`, keeping playbook templates aligned with the integration endpoints used by the rest of the lab.
+
+## 8. Single-node vs. split-node deployments
+
+You can choose between consolidating NG-SIEM and NG-SOAR on one VM or deploying them separately:
+
+- **Single node:** Point both the `ng_siem` and `ng_soar` inventory groups to the same host. The compose bundles will land under `/opt/ng-siem` and `/opt/ng-soar` on that node, and the shared `ng_external_services` values keep integrations consistent.
+- **Split nodes:** Keep distinct hosts under each group as defined in `provisioning/case-1d/topology.yml`. Override IP/port variables per host or per group if the service endpoints differ by zone.
+
+Use tags during provisioning (e.g. `--tags ng_siem` or `--tags ng_soar`) to drive individual deployments regardless of the topology you select.

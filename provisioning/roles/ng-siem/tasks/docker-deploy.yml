@@ -1,0 +1,106 @@
+- name: Install Docker and SMB prerequisites for NG-SIEM
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - cifs-utils
+      - smbclient
+      - unzip
+    state: present
+    update_cache: true
+
+- name: Ensure Docker keyring directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download Docker GPG key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+
+- name: Add Docker APT repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch={{ (ansible_architecture | default('amd64')) | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+    update_cache: true
+
+- name: Install Docker engine packages
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: true
+
+- name: Ensure Docker service is started
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Prepare NG-SIEM compose bundle
+  block:
+    - name: Ensure NG-SIEM mount point exists
+      ansible.builtin.file:
+        path: "{{ ng_siem_compose_source.mount_point }}"
+        state: directory
+        mode: "0775"
+
+    - name: Mount SMB share with NG-SIEM artifacts
+      ansible.posix.mount:
+        src: "{{ ng_siem_compose_source.share }}"
+        path: "{{ ng_siem_compose_source.mount_point }}"
+        fstype: cifs
+        opts: "{{ ng_siem_compose_source.mount_opts }}"
+        state: mounted
+      when: ng_siem_compose_source.type == 'smb'
+
+    - name: Ensure NG-SIEM compose destination exists
+      ansible.builtin.file:
+        path: "{{ ng_siem_compose_source.destination_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Copy NG-SIEM compose archive from share
+      ansible.builtin.unarchive:
+        src: "{{ ng_siem_compose_source.archive_path }}"
+        dest: "{{ ng_siem_compose_source.destination_dir }}"
+        remote_src: true
+      when: ng_siem_compose_source.archive | bool
+
+    - name: Copy NG-SIEM compose file from share
+      ansible.builtin.copy:
+        src: "{{ ng_siem_compose_source.compose_path }}"
+        dest: "{{ ng_siem_compose_source.destination_dir }}/docker-compose.yml"
+        remote_src: true
+        mode: "0644"
+      when: not ng_siem_compose_source.archive | bool
+  always:
+    - name: Unmount NG-SIEM SMB share
+      ansible.posix.mount:
+        path: "{{ ng_siem_compose_source.mount_point }}"
+        state: unmounted
+      when: ng_siem_compose_source.type == 'smb'
+
+- name: Authenticate to container registry for NG-SIEM
+  community.docker.docker_login:
+    registry_url: "{{ ng_siem_registry.url }}"
+    username: "{{ ng_siem_registry.username }}"
+    password: "{{ ng_siem_registry.password }}"
+  when: ng_siem_registry.username | length > 0
+
+- name: Deploy NG-SIEM containers
+  community.docker.docker_compose_v2:
+    project_src: "{{ ng_siem_compose_source.destination_dir }}"
+  register: ng_siem_compose_result
+
+- name: Show NG-SIEM compose output
+  ansible.builtin.debug:
+    var: ng_siem_compose_result
