@@ -12,6 +12,16 @@
     group: ng-soc
     mode: "0750"
 
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Ensure ng-soc service is enabled and running
+  ansible.builtin.service:
+    name: ng-soc
+    enabled: true
+    state: started
+  when: "'ng-soc.service' in ansible_facts.services"
+
 - name: Deploy ng-soc dashboard configuration
   ansible.builtin.template:
     src: dashboard.yaml.j2
