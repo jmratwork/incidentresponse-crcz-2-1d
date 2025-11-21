@@ -1,0 +1,24 @@
+# Inventory de ejemplo para el subcaso 1d (NG-SOC).
+# Las IPs provienen de topology.yml (sección net_mappings); actualiza estos valores si cambia la topología.
+# Se recomienda usar claves SSH. Si necesitas contraseña, almacénala en Ansible Vault o expórtala como variable de entorno segura.
+
+[ng_soc]
+ng-soc ansible_host=10.30.10.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SOC') }}"
+
+[ng_siem]
+ng-siem ansible_host=10.30.10.20 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SIEM') }}"
+
+[ng_soar]
+ng-soar ansible_host=10.30.20.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SOAR') }}"
+
+[cti_ss]
+cti-ss ansible_host=10.30.30.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_CTI_SS') }}"
+
+[cicms]
+cicms-operator ansible_host=10.30.40.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_CICMS') }}"
+
+[playbook_library]
+playbook-library ansible_host=10.30.30.20 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_LIBRARY') }}"
+
+[telemetry_feeder]
+telemetry-simulator ansible_host=10.30.50.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_TELEMETRY') }}"
