@@ -1,0 +1,28 @@
+---
+# Shared integration endpoints for NG-SIEM and NG-SOAR. Override these in host_vars
+# or inventory host definitions to point to the lab-specific IPs.
+ng_external_services:
+  misp:
+    host: 10.10.10.20
+    port: 8443
+    api_base: https://misp.lab.local
+  dfir_iris:
+    host: 10.10.10.30
+    port: 443
+    api_base: https://dfir-iris.lab.local
+  cortex:
+    host: 10.10.10.40
+    port: 9001
+    api_base: http://cortex.lab.local:9001
+
+# The roles fallback to the defaults in `roles/ng-siem` and `roles/ng-soar` when these
+# are undefined. Keeping them here allows a single set of IP/port definitions for both
+# services. Examples of overriding per environment:
+#
+#   ansible-playbook -i inventory.ini provisioning/case-1d/provisioning/playbook.yml \
+#     --extra-vars "ng_external_services.misp.host=192.168.122.50"
+#
+#   [ng_soar]
+#   ng-soar ng_external_services.misp.host=172.16.20.15
+ng_siem_external_services: "{{ ng_external_services }}"
+ng_soar_external_services: "{{ ng_external_services }}"
