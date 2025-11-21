@@ -1,6 +1,6 @@
-# Inventory de ejemplo para el subcaso 1d (NG-SOC).
-# Las IPs provienen de topology.yml (sección net_mappings); actualiza estos valores si cambia la topología.
-# Se recomienda usar claves SSH. Si necesitas contraseña, almacénala en Ansible Vault o expórtala como variable de entorno segura.
+# Sample inventory for subcase 1d (NG-SOC).
+# IPs come from topology.yml (net_mappings); update if the topology changes.
+# Prefer SSH keys; if a password is required, store it in Ansible Vault or provide it via a secure environment variable.
 
 [ng_soc]
 ng-soc ansible_host=10.30.10.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SOC') }}"
