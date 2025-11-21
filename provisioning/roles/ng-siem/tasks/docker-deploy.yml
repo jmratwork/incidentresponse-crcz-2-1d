@@ -75,13 +75,53 @@
         remote_src: true
       when: ng_siem_compose_source.archive | bool
 
+    - name: Check NG-SIEM compose file on SMB share
+      ansible.builtin.stat:
+        path: "{{ ng_siem_compose_source.compose_path }}"
+      register: ng_siem_compose_file
+      when: not ng_siem_compose_source.archive | bool
+
+    - name: Fail when NG-SIEM compose file is missing and no fallback is configured
+      ansible.builtin.fail:
+        msg: >-
+          NG-SIEM compose file not found at {{ ng_siem_compose_source.compose_path }}.
+          Provide the file on the SMB share or configure ng_siem_compose_fallback to use a bundled file or HTTP download.
+      when:
+        - not ng_siem_compose_source.archive | bool
+        - not ng_siem_compose_file.stat.exists
+        - not ng_siem_compose_fallback.enabled | bool
+
     - name: Copy NG-SIEM compose file from share
       ansible.builtin.copy:
         src: "{{ ng_siem_compose_source.compose_path }}"
         dest: "{{ ng_siem_compose_source.destination_dir }}/docker-compose.yml"
         remote_src: true
         mode: "0644"
-      when: not ng_siem_compose_source.archive | bool
+      when:
+        - not ng_siem_compose_source.archive | bool
+        - ng_siem_compose_file.stat.exists
+
+    - name: Download NG-SIEM compose file from fallback URL
+      ansible.builtin.get_url:
+        url: "{{ ng_siem_compose_fallback.url }}"
+        dest: "{{ ng_siem_compose_source.destination_dir }}/docker-compose.yml"
+        mode: "{{ ng_siem_compose_fallback.mode }}"
+      when:
+        - not ng_siem_compose_source.archive | bool
+        - not ng_siem_compose_file.stat.exists
+        - ng_siem_compose_fallback.enabled | bool
+        - ng_siem_compose_fallback.type == 'url'
+
+    - name: Copy NG-SIEM compose file from bundled path
+      ansible.builtin.copy:
+        src: "{{ ng_siem_compose_fallback.path }}"
+        dest: "{{ ng_siem_compose_source.destination_dir }}/docker-compose.yml"
+        mode: "{{ ng_siem_compose_fallback.mode }}"
+      when:
+        - not ng_siem_compose_source.archive | bool
+        - not ng_siem_compose_file.stat.exists
+        - ng_siem_compose_fallback.enabled | bool
+        - ng_siem_compose_fallback.type == 'file'
   always:
     - name: Unmount NG-SIEM SMB share
       ansible.posix.mount:
