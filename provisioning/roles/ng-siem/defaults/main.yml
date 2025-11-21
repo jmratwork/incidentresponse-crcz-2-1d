@@ -37,6 +37,13 @@ ng_siem_compose_source:
   archive: false
   destination_dir: /opt/ng-siem
 
+ng_siem_compose_fallback:
+  enabled: false
+  type: file  # file|url
+  path: "{{ playbook_dir }}/roles/ng-siem/files/docker-compose.yml"
+  url: ""
+  mode: "0644"
+
 ng_siem_registry:
   url: https://index.docker.io/v1/
   username: ""
