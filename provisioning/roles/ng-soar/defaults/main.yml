@@ -25,6 +25,7 @@ ng_soar_healthcheck:
   status_code: 200
 
 ng_soar_containerized: true
+ng_soar_compose_build: true
 
 ng_soar_compose_source:
   type: smb

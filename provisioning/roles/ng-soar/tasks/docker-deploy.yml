@@ -99,6 +99,8 @@
 - name: Deploy NG-SOAR containers
   community.docker.docker_compose_v2:
     project_src: "{{ ng_soar_compose_source.destination_dir }}"
+    state: present
+    build: "{{ 'always' if ng_soar_compose_build | bool else 'never' }}"
   register: ng_soar_compose_result
 
 - name: Show NG-SOAR compose output
