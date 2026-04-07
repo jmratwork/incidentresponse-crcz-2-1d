@@ -29,7 +29,6 @@
 #  changed_when: false
 #  failed_when: cti_ss_status.rc != 0 or 'running' not in cti_ss_status.stdout.lower()
 
-#Added Tasks
 - name: Install Docker prerequisites
   ansible.builtin.apt:
     name:
@@ -45,25 +44,20 @@
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Download Docker GPG key
   ansible.builtin.get_url:
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/keyrings/docker.asc
-    mode: '0644'
+    mode: "0644"
 
 - name: Add Docker APT repository
-  ansible.builtin.shell: |
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-  args:
-    creates: /etc/apt/sources.list.d/docker.list
-  register: repo_add
-  changed_when: repo_add.rc == 0
-
-- name: Update APT cache after adding repository
-  ansible.builtin.apt:
-    update_cache: yes
+  ansible.builtin.apt_repository:
+    repo: "deb [arch={{ (ansible_architecture | default('amd64')) | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+    update_cache: true
 
 - name: Install Docker packages
   ansible.builtin.apt:
@@ -74,102 +68,98 @@
       - docker-buildx-plugin
       - docker-compose-plugin
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Ensure Docker service is started and enabled
   ansible.builtin.service:
     name: docker
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Create mount point
   ansible.builtin.file:
-    path: "/mnt/smb_shared"
+    path: "{{ cti_ss_compose_source.mount_point }}"
     state: directory
     mode: "0775"
     
 - name: Mount SMB Share (guest)
   ansible.builtin.mount:
-    src: "//10.250.232.198/shared"
-    path: "/mnt/smb_shared"
+    src: "{{ cti_ss_compose_source.share }}"
+    path: "{{ cti_ss_compose_source.mount_point }}"
     fstype: cifs
-    opts: "guest,vers=3.0"
+    opts: "{{ cti_ss_compose_source.mount_opts }}"
     state: mounted
 
 - name: Create MISP directory for the git repo
-  file:
-    path: "/opt/misp-docker"
+  ansible.builtin.file:
+    path: "{{ cti_ss_misp_project_dir }}"
     state: directory
     mode: "0755"
 
 - name: Login to Docker Hub
   community.docker.docker_login:
-    username: demongsoc
+    registry_url: "{{ cti_ss_registry.url }}"
+    username: "{{ cti_ss_registry.username }}"
     password: "{{ cti_ss_docker_password }}"
+  when: cti_ss_registry.username | length > 0
   no_log: true
 
 - name: Download MISP docker
-  git:
-    repo: "https://github.com/MISP/misp-docker.git"
-    dest: "/opt/misp-docker"
-    version: "master"
+  ansible.builtin.git:
+    repo: "{{ cti_ss_misp_repo }}"
+    dest: "{{ cti_ss_misp_project_dir }}"
+    version: "{{ cti_ss_misp_repo_version }}"
   
 - name: Copy MISP env
-  copy:
-    src: /opt/misp-docker/template.env
-    dest: /opt/misp-docker/.env
-    remote_src: yes
+  ansible.builtin.copy:
+    src: "{{ cti_ss_misp_project_dir }}/template.env"
+    dest: "{{ cti_ss_misp_project_dir }}/.env"
+    remote_src: true
 
 - name: Change env http port for MISP
-  lineinfile:
-    path: /opt/misp-docker/.env
+  ansible.builtin.lineinfile:
+    path: "{{ cti_ss_misp_project_dir }}/.env"
     regexp: '^#?\s*CORE_HTTP_PORT='
-    line: CORE_HTTP_PORT=8082
+    line: "CORE_HTTP_PORT={{ cti_ss_misp_http_port }}"
     state: present
 
 - name: Change env https port for MISP
-  lineinfile:
-    path: /opt/misp-docker/.env
+  ansible.builtin.lineinfile:
+    path: "{{ cti_ss_misp_project_dir }}/.env"
     regexp: '^#?\s*CORE_HTTPS_PORT='
-    line: CORE_HTTPS_PORT=8443
+    line: "CORE_HTTPS_PORT={{ cti_ss_misp_https_port }}"
     state: present
 
 - name: Change BASE_URL in env for MISP
-  lineinfile:
-    path: /opt/misp-docker/.env
+  ansible.builtin.lineinfile:
+    path: "{{ cti_ss_misp_project_dir }}/.env"
     regexp: '^#?\s*BASE_URL='
-    line: 'BASE_URL=https://10.30.30.10:8443'
+    line: "BASE_URL={{ cti_ss_misp_base_url }}"
     state: present
     insertafter: EOF
-    backup: yes
+    backup: true
 
-#- name: Deployment of MISP Docker
-#  community.docker.docker_compose_v2:
-#    project_src: "/opt/misp-docker"
-#    state: present
-#    build: always
-#  register: misp_output
+- name: Deployment of MISP Docker
+  community.docker.docker_compose_v2:
+    project_src: "{{ cti_ss_misp_project_dir }}"
+    state: present
+    build: always
+  register: cti_ss_misp_output
 
-- name: Deploy Portainer
-  community.docker.docker_container:
-    name: portainer
-    image: portainer/portainer-ce:latest
-    state: started
-    restart_policy: always
-    ports: 
-      - "9443:9443"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "portainer_data:/data"
-  register: portainer_output
+- name: Get or generate MISP API key for admin user
+  community.docker.docker_container_exec:
+    container: "{{ cti_ss_misp_core_container }}"
+    command: "/var/www/MISP/app/Console/cake user change_authkey {{ cti_ss_misp_admin_user }}"
+  register: cti_ss_misp_user_info
+  no_log: true
 
-#- name: Get or generate MISP API key for admin user
-#  community.docker.docker_container_exec:
-#    container: misp-docker-misp-core-1
-#    command: "/var/www/MISP/app/Console/cake user change_authkey admin@admin.test"
-#  register: misp_user_info
+- name: Save MISP API key fact for cross-role reuse
+  ansible.builtin.set_fact:
+    cti_ss_misp_api_key: "{{ cti_ss_misp_user_info.stdout.split('Old authentication keys disabled and new key created: ')[1] | trim }}"
+    cacheable: true
+  no_log: true
 
-#- name: Save MISP API key fact
-#  set_fact:
-#    misp_api_key: "{{ misp_user_info.stdout.split('Old authentication keys disabled and new key created: ')[1] | trim }}"
-#  delegate_facts: true
+- name: Unmount CTI-SS SMB share
+  ansible.builtin.mount:
+    path: "{{ cti_ss_compose_source.mount_point }}"
+    state: unmounted
