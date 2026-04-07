@@ -29,11 +29,14 @@ ansible-galaxy collection install community.general
 
 ## Running the playbook
 
+`provisioning/case-1d/provisioning/playbook.yml` resolves roles from `provisioning/case-1d/provisioning/roles` through `provisioning/case-1d/provisioning/ansible.cfg` (`roles_path = ./roles`).
+
 ```bash
+ANSIBLE_CONFIG=provisioning/case-1d/provisioning/ansible.cfg \
 ansible-playbook -i inventory.ini provisioning/case-1d/provisioning/playbook.yml
 ```
 
-Use tags to execute individual components, e.g. `--tags ng_siem` to provision only the SIEM server.
+Use tags to execute individual components, e.g. `--tags ng-siem` to provision only the SIEM server.
 
 ## Role functional requirements
 
@@ -77,3 +80,7 @@ Use tags to execute individual components, e.g. `--tags ng_siem` to provision on
 The default variables live in `roles/<role>/defaults/main.yml` and cover ports, template paths, CACAO parameters and ingestion credentials. Adjust those values in `group_vars`, the inventory or `--extra-vars` to adapt pipelines, queues and collections to each lab.
 
 Each `tasks/main.yml` applies the templates with idempotent modules (`ansible.builtin.template`, `ansible.builtin.copy`) and triggers handlers for controlled restarts. The final steps include command-line or `ansible.builtin.uri` validations with explicit `failed_when` clauses so any connectivity, syntax or service-status issue stops the deployment and provides immediate traceability.
+
+## Synchronisation policy
+
+For Subcase 1d, the source of truth is `provisioning/case-1d/provisioning/roles/*`. The top-level `provisioning/roles/*` tree is maintained only as a compatibility mirror and should receive only deliberate, minimal backports when needed.
