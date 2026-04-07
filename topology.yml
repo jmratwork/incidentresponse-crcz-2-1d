@@ -30,7 +30,7 @@ hosts:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
     flavor: standard.small
-  - name: telemetry-simulator
+  - name: telemetry-feeder
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
@@ -76,7 +76,7 @@ net_mappings:
   - host: cicms-operator
     network: coordination-zone
     ip: 10.30.40.10
-  - host: telemetry-simulator
+  - host: telemetry-feeder
     network: telemetry-zone
     ip: 10.30.50.10
 router_mappings:

@@ -41,8 +41,8 @@
     - role: playbook-library
       tags: playbook-library
 
-- name: Start telemetry simulator feeds
-  hosts: telemetry-simulator
+- name: Start telemetry feeder feeds
+  hosts: telemetry-feeder
   become: true
   roles:
     - role: telemetry-feeder

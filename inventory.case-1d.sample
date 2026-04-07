@@ -21,4 +21,4 @@ cicms-operator ansible_host=10.30.40.10 ansible_user=ubuntu ansible_password="{{
 playbook-library ansible_host=10.30.30.20 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_LIBRARY') }}"
 
 [telemetry_feeder]
-telemetry-simulator ansible_host=10.30.50.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_TELEMETRY') }}"
+telemetry-feeder ansible_host=10.30.50.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_TELEMETRY') }}"

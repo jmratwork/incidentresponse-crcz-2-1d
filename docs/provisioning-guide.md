@@ -7,7 +7,7 @@ This guide explains how to instantiate the CyberRangeCZ infrastructure aligned w
 1. Sign in to the KYPO portal with an account that can create sandboxes.
 2. Upload `provisioning/case-1d/topology.yml` to provision:
    - Core NG-SOC hosts (`ng-soc`, `ng-siem`, `ng-soar`).
-   - Supporting services (`cti-ss`, `cicms-operator`, `playbook-library`, `telemetry-simulator`).
+   - Supporting services (`cti-ss`, `cicms-operator`, `playbook-library`, `telemetry-feeder`).
    - Segmented networks that emulate the SOC, automation, intelligence, coordination and telemetry zones.
 3. Deploy the sandbox and wait for KYPO/CRCZ to report that all machines are reachable.
 
@@ -47,7 +47,7 @@ This playbook configures the NG ecosystem by installing packages, enabling servi
 
 - Check SSH or WinRM connectivity with `ansible all -i inventory.ini -m ping` (use `ansible.windows.win_ping` for Windows groups).
 - Verify that key services are running (`nginx` on the playbook library, `redis-server` on NG-SOAR, `grafana-server` on CICMS Operator).
-- Trigger the telemetry simulator script (`/opt/telemetry-simulator/scenarios/generate.sh`) and confirm that NG-SIEM receives events through `rsyslog`.
+- Trigger the telemetry feeder script (`/opt/telemetry-feeder/scenarios/generate.sh`) and confirm that NG-SIEM receives events through `rsyslog`.
 - Confirm that NG-SOAR updates the incident status in CICMS Operator and that CTI-SS enrichment artifacts are stored in `/opt/cti-ss/share`.
 
 Following these steps ensures the infrastructure mirrors the flow of subcase 1d and is ready for the exercises described in `docs/subcase-1d-playbook-automation.md`.
