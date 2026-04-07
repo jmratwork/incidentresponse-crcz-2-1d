@@ -12,7 +12,7 @@ Automation assets for the NG-SOC ecosystem used during the playbook execution ex
 | `cti_ss` | `cti-ss` | Threat intelligence and indicator enrichment. |
 | `cicms` | `cicms-operator` | Incident coordination and documentation workspace. |
 | `playbook_library` | `playbook-library` | Standards repository (NVD/NIST, MITRE ATT&CK) and lessons learnt. |
-| `telemetry_feeder` | `telemetry-simulator` | Generates telemetry samples for NG-SIEM validation. |
+| `telemetry_feeder` | `telemetry-feeder` | Generates telemetry samples for NG-SIEM validation. |
 
 ## Requirements
 
