@@ -4,7 +4,7 @@ The `provisioning/` directory contains topology definitions and Ansible playbook
 
 ## Topology files
 
-- `case-1d/topology.yml` – KYPO/CRCZ topology for the NG-SOC, NG-SIEM, NG-SOAR, CTI-SS, CICMS Operator, playbook library and telemetry simulator services.
+- `case-1d/topology.yml` – KYPO/CRCZ topology for the NG-SOC, NG-SIEM, NG-SOAR, CTI-SS, CICMS Operator, playbook library and telemetry-feeder services.
 
 This file can be imported into KYPO to instantiate the virtual machines, routers and networks ahead of running the configuration playbooks.
 
