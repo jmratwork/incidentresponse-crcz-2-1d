@@ -1,3 +1,4 @@
+---
 - name: Ensure ng-siem service identity exists
   ansible.builtin.group:
     name: ng-siem
@@ -20,6 +21,10 @@
     mode: "0640"
   notify: reload ng-siem pipelines
   no_log: true
+
+- name: Deploy NG-SIEM container stack
+  ansible.builtin.import_tasks: docker-deploy.yml
+  when: ng_siem_containerized | bool
 
 - name: Check for ng-siemctl binary
   ansible.builtin.stat:

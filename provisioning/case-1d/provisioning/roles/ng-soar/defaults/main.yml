@@ -26,5 +26,20 @@ ng_soar_healthcheck:
   url: http://127.0.0.1:8080/healthz
   status_code: 200
 
-# NOTE: Enable the ng-soar validation and health checks only when the real
-# service is deployed and accessible in the target environment.
+ng_soar_containerized: true
+ng_soar_compose_build: true
+
+ng_soar_compose_source:
+  type: smb
+  share: "//10.250.232.198/shared"
+  mount_point: /mnt/ng-soar
+  mount_opts: guest,vers=3.0
+  compose_path: /mnt/ng-soar/ng-soar/docker-compose.yml
+  archive_path: /mnt/ng-soar/ng-soar/docker-compose.zip
+  archive: false
+  destination_dir: /opt/ng-soar
+
+ng_soar_registry:
+  url: https://index.docker.io/v1/
+  username: ""
+  password: ""
