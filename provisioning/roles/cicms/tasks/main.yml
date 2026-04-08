@@ -162,8 +162,8 @@
     that:
       - >
         (
-          hostvars[cicms_misp_api_key_host].cti_ss_misp_api_key
-          | default(hostvars[groups['cti-ss'][0]].cti_ss_misp_api_key | default(''))
+          hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name]
+          | default(hostvars[groups['cti-ss'][0]][cicms_misp_api_key_fact_name] | default(''))
         ) | length > 0
     fail_msg: "MISP API key missing. Run cti-ss role successfully before cicms."
 
@@ -171,28 +171,28 @@
   ansible.builtin.set_fact:
     cicms_misp_api_key: >-
       {{
-        hostvars[cicms_misp_api_key_host].cti_ss_misp_api_key
-        | default(hostvars[groups['cti-ss'][0]].cti_ss_misp_api_key | default(''))
+        hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name]
+        | default(hostvars[groups['cti-ss'][0]][cicms_misp_api_key_fact_name] | default(''))
       }}
   no_log: true
 
 - name: Inject MISP integration settings into DFIR-IRIS .env
   ansible.builtin.lineinfile:
-    path: "{{ cicms_dfir_project_dir }}/.env"
+    path: "{{ cicms_dfir_env_file }}"
     regexp: '^IRIS_MISP_URL='
     line: "IRIS_MISP_URL={{ cicms_iris_misp_url }}"
     state: present
 
 - name: Disable SSL verification for MISP connection
   ansible.builtin.lineinfile:
-    path: "{{ cicms_dfir_project_dir }}/.env"
+    path: "{{ cicms_dfir_env_file }}"
     regexp: '^IRIS_MISP_VERIFY_CERT='
     line: "IRIS_MISP_VERIFY_CERT={{ cicms_iris_misp_verify_cert | ternary('true', 'false') }}"
     state: present
 
 - name: Inject MISP key into DFIR-IRIS .env
   ansible.builtin.lineinfile:
-    path: "{{ cicms_dfir_project_dir }}/.env"
+    path: "{{ cicms_dfir_env_file }}"
     regexp: '^IRIS_MISP_KEY='
     line: "IRIS_MISP_KEY={{ cicms_misp_api_key }}"
     state: present
@@ -209,12 +209,6 @@
   ansible.builtin.debug:
     msg: |
       DFIR_IRIS: {{ dfir_iris_output | default('No output captured') }}
-
-- name: Ensure Portainer container is absent on CICMS
-  community.docker.docker_container:
-    name: "{{ cicms_portainer_container }}"
-    state: absent
-  failed_when: false
 
 - name: Unmount SMB share
   ansible.builtin.mount:

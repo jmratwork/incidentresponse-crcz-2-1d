@@ -112,27 +112,27 @@
   
 - name: Copy MISP env
   ansible.builtin.copy:
-    src: "{{ cti_ss_misp_project_dir }}/template.env"
-    dest: "{{ cti_ss_misp_project_dir }}/.env"
+    src: "{{ cti_ss_misp_env_template }}"
+    dest: "{{ cti_ss_misp_env_file }}"
     remote_src: true
 
 - name: Change env http port for MISP
   ansible.builtin.lineinfile:
-    path: "{{ cti_ss_misp_project_dir }}/.env"
+    path: "{{ cti_ss_misp_env_file }}"
     regexp: '^#?\s*CORE_HTTP_PORT='
     line: "CORE_HTTP_PORT={{ cti_ss_misp_http_port }}"
     state: present
 
 - name: Change env https port for MISP
   ansible.builtin.lineinfile:
-    path: "{{ cti_ss_misp_project_dir }}/.env"
+    path: "{{ cti_ss_misp_env_file }}"
     regexp: '^#?\s*CORE_HTTPS_PORT='
     line: "CORE_HTTPS_PORT={{ cti_ss_misp_https_port }}"
     state: present
 
 - name: Change BASE_URL in env for MISP
   ansible.builtin.lineinfile:
-    path: "{{ cti_ss_misp_project_dir }}/.env"
+    path: "{{ cti_ss_misp_env_file }}"
     regexp: '^#?\s*BASE_URL='
     line: "BASE_URL={{ cti_ss_misp_base_url }}"
     state: present
@@ -161,11 +161,21 @@
     container: "{{ cti_ss_misp_core_container }}"
     command: "/var/www/MISP/app/Console/cake user change_authkey {{ cti_ss_misp_admin_user }}"
   register: cti_ss_misp_user_info
+  failed_when: >-
+    cti_ss_misp_user_info.rc != 0 or
+    (
+      (cti_ss_misp_user_info.stdout ~ '\n' ~ cti_ss_misp_user_info.stderr)
+      | regex_search(cti_ss_misp_api_key_regex)
+    ) is not string
   no_log: true
 
 - name: Save MISP API key fact for cross-role reuse
   ansible.builtin.set_fact:
-    cti_ss_misp_api_key: "{{ cti_ss_misp_user_info.stdout | regex_search(cti_ss_misp_api_key_regex) }}"
+    cti_ss_misp_api_key: >-
+      {{
+        (cti_ss_misp_user_info.stdout ~ '\n' ~ cti_ss_misp_user_info.stderr)
+        | regex_search(cti_ss_misp_api_key_regex)
+      }}
     cacheable: true
   no_log: true
 
@@ -175,12 +185,6 @@
   delegate_to: "{{ cti_ss_misp_api_key_share_host }}"
   delegate_facts: true
   no_log: true
-
-- name: Ensure Portainer container is absent on CTI-SS
-  community.docker.docker_container:
-    name: "{{ cti_ss_misp_portainer_container }}"
-    state: absent
-  failed_when: false
 
 - name: Unmount CTI-SS SMB share
   ansible.builtin.mount:
