@@ -93,13 +93,13 @@
 
 - name: Download Docker GPG key
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
+    url: "{{ cicms_docker_apt_gpg_url }}"
     dest: /etc/apt/keyrings/docker.asc
     mode: "0644"
 
 - name: Add Docker APT repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch={{ (ansible_architecture | default('amd64')) | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    repo: "{{ cicms_docker_apt_repo }}"
     state: present
     filename: docker
     update_cache: true
@@ -160,8 +160,21 @@
 - name: Ensure MISP API key is available from cti-ss role
   ansible.builtin.assert:
     that:
-      - (hostvars[groups['cti-ss'][0]].cti_ss_misp_api_key | default('')) | length > 0
+      - >
+        (
+          hostvars[cicms_misp_api_key_host].cti_ss_misp_api_key
+          | default(hostvars[groups['cti-ss'][0]].cti_ss_misp_api_key | default(''))
+        ) | length > 0
     fail_msg: "MISP API key missing. Run cti-ss role successfully before cicms."
+
+- name: Resolve MISP API key source for CICMS
+  ansible.builtin.set_fact:
+    cicms_misp_api_key: >-
+      {{
+        hostvars[cicms_misp_api_key_host].cti_ss_misp_api_key
+        | default(hostvars[groups['cti-ss'][0]].cti_ss_misp_api_key | default(''))
+      }}
+  no_log: true
 
 - name: Inject MISP integration settings into DFIR-IRIS .env
   ansible.builtin.lineinfile:
@@ -181,7 +194,7 @@
   ansible.builtin.lineinfile:
     path: "{{ cicms_dfir_project_dir }}/.env"
     regexp: '^IRIS_MISP_KEY='
-    line: "IRIS_MISP_KEY={{ hostvars[groups['cti-ss'][0]].cti_ss_misp_api_key }}"
+    line: "IRIS_MISP_KEY={{ cicms_misp_api_key }}"
     state: present
   no_log: true
 
@@ -196,6 +209,12 @@
   ansible.builtin.debug:
     msg: |
       DFIR_IRIS: {{ dfir_iris_output | default('No output captured') }}
+
+- name: Ensure Portainer container is absent on CICMS
+  community.docker.docker_container:
+    name: "{{ cicms_portainer_container }}"
+    state: absent
+  failed_when: false
 
 - name: Unmount SMB share
   ansible.builtin.mount:

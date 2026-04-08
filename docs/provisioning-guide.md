@@ -9,6 +9,7 @@ This guide explains how to instantiate the CyberRangeCZ infrastructure aligned w
    - Core NG-SOC hosts (`ng-soc`, `ng-siem`, `ng-soar`).
    - Supporting services (`cti-ss`, `cicms-operator`, `playbook-library`, `telemetry-feeder`).
    - Segmented networks that emulate the SOC, automation, intelligence, coordination and telemetry zones.
+   - Canonical telemetry node naming for subcase 1d is `telemetry-feeder` (not `telemetry-simulator`).
 3. Deploy the sandbox and wait for KYPO/CRCZ to report that all machines are reachable.
 
 ## 2. Prepare credentials
