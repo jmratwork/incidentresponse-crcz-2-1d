@@ -64,7 +64,7 @@
   when: cicms_enable_nginx_checks | bool
 
 - name: Validate CICMS nginx syntax
-  ansible.builtin.command: nginx -t
+  ansible.builtin.command: "{{ cicms_nginx_binary_path }} -t"
   register: cicms_nginx_check
   changed_when: false
   failed_when: cicms_nginx_check.rc != 0
