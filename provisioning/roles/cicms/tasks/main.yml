@@ -57,21 +57,33 @@
     group: root
     mode: "0640"
 
-#- name: Validate CICMS nginx syntax
-#  ansible.builtin.command: nginx -t
-#  register: cicms_nginx_check
-#  changed_when: false
-#  failed_when: cicms_nginx_check.rc != 0
+- name: Detect nginx binary for CICMS validation
+  ansible.builtin.stat:
+    path: "{{ cicms_nginx_binary_path }}"
+  register: cicms_nginx_binary
+  when: cicms_enable_nginx_checks | bool
 
-#- name: Check CICMS health endpoint
-#  ansible.builtin.uri:
-#    url: "{{ cicms_healthcheck.url }}"
-#    method: GET
-#    status_code: "{{ cicms_healthcheck.status_code | int }}"
-#    validate_certs: "{{ cicms_healthcheck.validate_certs | bool }}"
-#  register: cicms_health
-#  failed_when: cicms_health.status != cicms_healthcheck.status_code
-#  changed_when: false
+- name: Validate CICMS nginx syntax
+  ansible.builtin.command: "{{ cicms_nginx_binary_path }} -t"
+  register: cicms_nginx_check
+  changed_when: false
+  failed_when: cicms_nginx_check.rc != 0
+  when:
+    - cicms_enable_nginx_checks | bool
+    - cicms_nginx_binary.stat.exists | default(false)
+
+- name: Check CICMS health endpoint
+  ansible.builtin.uri:
+    url: "{{ cicms_healthcheck.url }}"
+    method: GET
+    status_code: "{{ cicms_healthcheck.status_code | int }}"
+    validate_certs: "{{ cicms_healthcheck.validate_certs | bool }}"
+  register: cicms_health
+  failed_when: cicms_health.status != cicms_healthcheck.status_code
+  changed_when: false
+  when:
+    - cicms_enable_nginx_checks | bool
+    - cicms_nginx_binary.stat.exists | default(false)
 
 
 - name: Install Docker prerequisites
@@ -157,32 +169,37 @@
   when: cicms_registry.username | length > 0
   no_log: true
 
+- name: Initialize CICMS MISP API key fact
+  ansible.builtin.set_fact:
+    cicms_misp_api_key: "{{ cicms_misp_api_key | default('', true) }}"
+  no_log: true
+
 - name: Resolve MISP API key source for CICMS
   ansible.builtin.set_fact:
-    cicms_misp_api_key: >-
-      {{
-        (
-          hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name]
-          | default('', true)
-        )
-        if (
-          cicms_misp_api_key_host in hostvars
-          and (hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name] | default('') | length > 0)
-        )
-        else (
-          hostvars[groups['cti-ss'][0]][cicms_misp_api_key_fact_name]
-          | default('', true)
-          if ('cti-ss' in groups and (groups['cti-ss'] | length) > 0)
-          else ''
-        )
-      }}
+    cicms_misp_api_key: "{{ hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name] | default('', true) }}"
+  when: cicms_misp_api_key_host in hostvars
+  no_log: true
+
+- name: Build fallback list of CTI-SS hosts for MISP API key lookup
+  ansible.builtin.set_fact:
+    cicms_misp_api_key_source_hosts: "{{ (groups.get('cti-ss', []) + groups.get('cti_ss', [])) | unique }}"
+  when: cicms_misp_api_key | default('') | length == 0
+  no_log: true
+
+- name: Resolve MISP API key from CTI-SS host facts
+  ansible.builtin.set_fact:
+    cicms_misp_api_key: "{{ hostvars[item][cicms_misp_api_key_fact_name] | default('', true) }}"
+  loop: "{{ cicms_misp_api_key_source_hosts | default([]) }}"
+  when:
+    - cicms_misp_api_key | default('') | length == 0
+    - hostvars[item][cicms_misp_api_key_fact_name] | default('') | length > 0
   no_log: true
 
 - name: Ensure MISP API key is available from cti-ss role
   ansible.builtin.assert:
     that:
       - cicms_misp_api_key | length > 0
-    fail_msg: "MISP API key missing. Run cti-ss role successfully before cicms."
+    fail_msg: "MISP API key missing. Run cti-ss in the same playbook (or configure fact caching) before cicms."
 
 - name: Inject MISP integration settings into DFIR-IRIS .env
   ansible.builtin.lineinfile:

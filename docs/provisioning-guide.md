@@ -43,15 +43,19 @@ ansible-galaxy collection install community.docker
 ansible-playbook -i inventory.ini provisioning/case-1d/provisioning/playbook.yml
 ```
 
-This playbook configures the NG ecosystem by installing packages, enabling services and seeding working directories that match the operational flow described in the NG-SOC documentation. Use tags (e.g. `--tags ng_soar`) to target specific components during troubleshooting.
+This playbook configures the NG ecosystem by installing packages, enabling services and seeding working directories that match the operational flow described in the NG-SOC documentation. Use tags (e.g. `--tags ng-soar`) to target specific components during troubleshooting.
 
 ### External prerequisites required by this repository
 
 - Docker Hub credentials available at runtime (for roles that perform `docker_login`):
   - `CTI_SS_DOCKER_PASSWORD` (cti-ss)
   - `CICMS_DOCKER_PASSWORD` (cicms)
+- Optional TAXII credentials for CTI-SS users (recommended instead of defaults):
+  - `CTI_SS_TAXII_SIEM_PASSWORD`
+  - `CTI_SS_TAXII_TELEMETRY_PASSWORD`
 - A reachable SMB/CIFS share containing DFIR-IRIS artifacts (`dfir-iris-custom.zip`) and any referenced compose bundles.
 - Network reachability between `cicms-operator` and `cti-ss` on the configured MISP URL/port (`cicms_iris_misp_url`).
+- MISP API key propagation expects `cti-ss` and `cicms-operator` to run in the same playbook execution unless Ansible fact caching is enabled.
 
 ## 5. Validation steps
 
@@ -110,4 +114,4 @@ You can choose between consolidating NG-SIEM and NG-SOAR on one VM or deploying 
 - **Single node:** Point both the `ng_siem` and `ng_soar` inventory groups to the same host. The compose bundles will land under `/opt/ng-siem` and `/opt/ng-soar` on that node, and the shared `ng_external_services` values keep integrations consistent.
 - **Split nodes:** Keep distinct hosts under each group as defined in `provisioning/case-1d/topology.yml`. Override IP/port variables per host or per group if the service endpoints differ by zone.
 
-Use tags during provisioning (e.g. `--tags ng_siem` or `--tags ng_soar`) to drive individual deployments regardless of the topology you select.
+Use tags during provisioning (e.g. `--tags ng-siem` or `--tags ng-soar`) to drive individual deployments regardless of the topology you select.

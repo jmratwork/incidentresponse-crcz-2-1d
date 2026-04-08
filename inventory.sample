@@ -1,23 +1,23 @@
 # NOTE: Store real credentials in Ansible Vault or environment variables before running playbooks.
 # Example: export ANSIBLE_PASSWORD_NG_SOC and reference it as ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SOC') }}"
 
-[ng_soc]
+[ng-soc]
 ng-soc ansible_host=10.30.10.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SOC') }}"
 
-[ng_siem]
+[ng-siem]
 ng-siem ansible_host=10.30.10.20 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SIEM') }}"
 
-[ng_soar]
+[ng-soar]
 ng-soar ansible_host=10.30.20.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SOAR') }}"
 
-[cti_ss]
+[cti-ss]
 cti-ss ansible_host=10.30.30.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_CTI_SS') }}"
 
-[playbook_library]
+[playbook-library]
 playbook-library ansible_host=10.30.30.20 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_LIBRARY') }}"
 
-[cicms]
+[cicms-operator]
 cicms-operator ansible_host=10.30.40.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_CICMS') }}"
 
-[telemetry_feeder]
+[telemetry-feeder]
 telemetry-feeder ansible_host=10.30.50.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_TELEMETRY') }}"

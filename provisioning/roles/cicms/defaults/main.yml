@@ -21,9 +21,11 @@ cicms_healthcheck:
   url: https://127.0.0.1:8443/status
   status_code: 200
   validate_certs: false
+cicms_enable_nginx_checks: false
+cicms_nginx_binary_path: /usr/sbin/nginx
 
 cicms_compose_source:
-  share: "//10.250.232.198/shared"
+  share: "//fileserver/shared"
   mount_point: /mnt/smb_shared
   mount_opts: guest,vers=3.0
   archive_path: /mnt/smb_shared/dfir-iris-custom.zip
@@ -37,7 +39,7 @@ cicms_dfir_env_file: "{{ cicms_dfir_project_dir }}/.env"
 
 cicms_registry:
   url: https://index.docker.io/v1/
-  username: demongsoc
+  username: ""
   password: "{{ lookup('env', 'CICMS_DOCKER_PASSWORD') }}"
 
 cicms_iris_misp_url: https://10.30.30.10:8443

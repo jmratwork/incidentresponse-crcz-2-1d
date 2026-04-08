@@ -17,26 +17,35 @@
   notify: restart cti sharing service
   no_log: true
 
-#- name: Validate CTI sharing daemon configuration
-#  ansible.builtin.command: "cti-ssctl configtest --config {{ cti_ss_taxii_config }}"
-#  register: cti_ss_configtest
-#  changed_when: false
-#  failed_when: cti_ss_configtest.rc != 0
+- name: Check if cti-ssctl binary is present
+  ansible.builtin.stat:
+    path: "{{ cti_ssctl_binary_path }}"
+  register: cti_ssctl
+  when: cti_ss_enable_healthchecks | bool
 
-#- name: Check CTI sharing service status
-#  ansible.builtin.command: "{{ cti_ss_healthcheck_command }}"
-#  register: cti_ss_status
-#  changed_when: false
-#  failed_when: cti_ss_status.rc != 0 or 'running' not in cti_ss_status.stdout.lower()
+- name: Validate CTI sharing daemon configuration
+  ansible.builtin.command: "cti-ssctl configtest --config {{ cti_ss_taxii_config }}"
+  register: cti_ss_configtest
+  changed_when: false
+  failed_when: cti_ss_configtest.rc != 0
+  when:
+    - cti_ss_enable_healthchecks | bool
+    - cti_ssctl.stat.exists | default(false)
+
+- name: Check CTI sharing service status
+  ansible.builtin.command: "{{ cti_ss_healthcheck_command }}"
+  register: cti_ss_status
+  changed_when: false
+  failed_when: cti_ss_status.rc != 0 or 'running' not in cti_ss_status.stdout.lower()
+  when:
+    - cti_ss_enable_healthchecks | bool
+    - cti_ssctl.stat.exists | default(false)
 
 - name: Install Docker prerequisites
   ansible.builtin.apt:
     name:
       - ca-certificates
       - curl
-      - smbclient
-      - cifs-utils
-      - unzip
     state: present
     update_cache: yes
 
