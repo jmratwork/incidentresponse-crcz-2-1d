@@ -17,13 +17,13 @@
 
 - name: Download Docker GPG key
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
+    url: "{{ ng_soar_docker_apt_gpg_url }}"
     dest: /etc/apt/keyrings/docker.asc
     mode: "0644"
 
 - name: Add Docker APT repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch={{ (ansible_architecture | default('amd64')) | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    repo: "{{ ng_soar_docker_apt_repo }}"
     state: present
     filename: docker
     update_cache: true

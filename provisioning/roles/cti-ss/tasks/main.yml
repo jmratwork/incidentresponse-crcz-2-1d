@@ -76,20 +76,6 @@
     state: started
     enabled: true
 
-- name: Create mount point
-  ansible.builtin.file:
-    path: "{{ cti_ss_compose_source.mount_point }}"
-    state: directory
-    mode: "0775"
-    
-- name: Mount SMB Share (guest)
-  ansible.builtin.mount:
-    src: "{{ cti_ss_compose_source.share }}"
-    path: "{{ cti_ss_compose_source.mount_point }}"
-    fstype: cifs
-    opts: "{{ cti_ss_compose_source.mount_opts }}"
-    state: mounted
-
 - name: Create MISP directory for the git repo
   ansible.builtin.file:
     path: "{{ cti_ss_misp_project_dir }}"
@@ -185,8 +171,3 @@
   delegate_to: "{{ cti_ss_misp_api_key_share_host }}"
   delegate_facts: true
   no_log: true
-
-- name: Unmount CTI-SS SMB share
-  ansible.builtin.mount:
-    path: "{{ cti_ss_compose_source.mount_point }}"
-    state: unmounted

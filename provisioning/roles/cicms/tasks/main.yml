@@ -157,24 +157,32 @@
   when: cicms_registry.username | length > 0
   no_log: true
 
-- name: Ensure MISP API key is available from cti-ss role
-  ansible.builtin.assert:
-    that:
-      - >
-        (
-          hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name]
-          | default(hostvars[groups['cti-ss'][0]][cicms_misp_api_key_fact_name] | default(''))
-        ) | length > 0
-    fail_msg: "MISP API key missing. Run cti-ss role successfully before cicms."
-
 - name: Resolve MISP API key source for CICMS
   ansible.builtin.set_fact:
     cicms_misp_api_key: >-
       {{
-        hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name]
-        | default(hostvars[groups['cti-ss'][0]][cicms_misp_api_key_fact_name] | default(''))
+        (
+          hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name]
+          | default('', true)
+        )
+        if (
+          cicms_misp_api_key_host in hostvars
+          and (hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name] | default('') | length > 0)
+        )
+        else (
+          hostvars[groups['cti-ss'][0]][cicms_misp_api_key_fact_name]
+          | default('', true)
+          if ('cti-ss' in groups and (groups['cti-ss'] | length) > 0)
+          else ''
+        )
       }}
   no_log: true
+
+- name: Ensure MISP API key is available from cti-ss role
+  ansible.builtin.assert:
+    that:
+      - cicms_misp_api_key | length > 0
+    fail_msg: "MISP API key missing. Run cti-ss role successfully before cicms."
 
 - name: Inject MISP integration settings into DFIR-IRIS .env
   ansible.builtin.lineinfile:
