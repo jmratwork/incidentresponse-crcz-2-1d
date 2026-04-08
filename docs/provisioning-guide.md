@@ -48,12 +48,13 @@ This playbook configures the NG ecosystem by installing packages, enabling servi
 
 ### External prerequisites required by this repository
 
-- Docker Hub credentials available at runtime (for roles that perform `docker_login`):
-  - `CTI_SS_DOCKER_PASSWORD` (cti-ss)
-  - `CICMS_DOCKER_PASSWORD` (cicms)
-- Optional TAXII credentials for CTI-SS users (recommended instead of defaults):
-  - `CTI_SS_TAXII_SIEM_PASSWORD`
-  - `CTI_SS_TAXII_TELEMETRY_PASSWORD`
+- Optional container registry credentials (only when private image pulls are required):
+  - `CTI_SS_REGISTRY_USERNAME`
+  - `CTI_SS_REGISTRY_PASSWORD`
+  - `cicms_registry.username` / `cicms_registry.password` provided from inventory, group vars, or vault.
+- Optional TAXII credentials for CTI-SS users:
+  - `CTI_SS_TAXII_SIEM_INGESTOR_PASSWORD`
+  - `CTI_SS_TAXII_TELEMETRY_FEEDER_PASSWORD`
 - A reachable SMB/CIFS share containing DFIR-IRIS artifacts (`dfir-iris-custom.zip`) and any referenced compose bundles.
 - Network reachability between `cicms-operator` and `cti-ss` on the configured MISP URL/port (`cicms_iris_misp_url`).
 - MISP API key propagation expects `cti-ss` and `cicms-operator` to run in the same playbook execution unless Ansible fact caching is enabled.
