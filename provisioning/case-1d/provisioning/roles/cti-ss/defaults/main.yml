@@ -18,3 +18,24 @@ cti_ss_bind_host: 0.0.0.0
 cti_ss_bind_port: 9000
 cti_ss_healthcheck_command: "/usr/bin/cti-ssctl status"
 cti_ss_enable_healthchecks: false
+
+# External compose source (SMB/CIFS share)
+cti_ss_compose_source:
+  share: "//fileserver/cti-ss"
+  mount_point: "/mnt/cti-ss"
+  mount_opts: "guest,ro,vers=3.0"
+
+# Container registry settings (keep password in env/vault, e.g. group_vars/cti_ss.yml)
+cti_ss_registry:
+  url: "https://index.docker.io/v1/"
+  username: ""
+
+# MISP deployment settings
+cti_ss_misp_repo: "https://github.com/MISP/misp-docker.git"
+cti_ss_misp_repo_version: "main"
+cti_ss_misp_project_dir: "/opt/misp-docker"
+cti_ss_misp_http_port: "80"
+cti_ss_misp_https_port: "443"
+cti_ss_misp_base_url: "https://localhost"
+cti_ss_misp_admin_user: "admin@admin.test"
+cti_ss_misp_core_container: "misp-core"
