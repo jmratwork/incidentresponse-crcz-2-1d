@@ -9,7 +9,7 @@ This guide explains how to instantiate the CyberRangeCZ infrastructure aligned w
    - Core NG-SOC hosts (`ng-soc`, `ng-siem`, `ng-soar`).
    - Supporting services (`cti-ss`, `cicms-operator`, `playbook-library`, `telemetry-feeder`).
    - Segmented networks that emulate the SOC, automation, intelligence, coordination and telemetry zones.
-   - Canonical telemetry node naming for subcase 1d is `telemetry-feeder` (not `telemetry-simulator`).
+   - Canonical telemetry node naming for subcase 1d is `telemetry-feeder`.
 3. Deploy the sandbox and wait for KYPO/CRCZ to report that all machines are reachable.
 
 ## 2. Prepare credentials
@@ -31,6 +31,7 @@ export ANSIBLE_PASSWORD_NG_SOAR='********'
 python3 -m pip install --upgrade ansible
 python3 -m pip install pywinrm
 ansible-galaxy collection install ansible.windows community.general
+ansible-galaxy collection install community.docker
 ```
 
 - Install `pywinrm` to enable Ansible WinRM connectivity. Use `python3 -m pip install "pywinrm[credssp]"` when the sandbox requires CredSSP delegation support.
@@ -43,6 +44,14 @@ ansible-playbook -i inventory.ini provisioning/case-1d/provisioning/playbook.yml
 ```
 
 This playbook configures the NG ecosystem by installing packages, enabling services and seeding working directories that match the operational flow described in the NG-SOC documentation. Use tags (e.g. `--tags ng_soar`) to target specific components during troubleshooting.
+
+### External prerequisites required by this repository
+
+- Docker Hub credentials available at runtime (for roles that perform `docker_login`):
+  - `CTI_SS_DOCKER_PASSWORD` (cti-ss)
+  - `CICMS_DOCKER_PASSWORD` (cicms)
+- A reachable SMB/CIFS share containing DFIR-IRIS artifacts (`dfir-iris-custom.zip`) and any referenced compose bundles.
+- Network reachability between `cicms-operator` and `cti-ss` on the configured MISP URL/port (`cicms_iris_misp_url`).
 
 ## 5. Validation steps
 

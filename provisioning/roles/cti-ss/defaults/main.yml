@@ -32,6 +32,8 @@ cti_ss_registry:
 cti_ss_misp_repo: "https://github.com/MISP/misp-docker.git"
 cti_ss_misp_repo_version: master
 cti_ss_misp_project_dir: /opt/misp-docker
+cti_ss_misp_env_template: "{{ cti_ss_misp_project_dir }}/template.env"
+cti_ss_misp_env_file: "{{ cti_ss_misp_project_dir }}/.env"
 cti_ss_misp_http_port: 8082
 cti_ss_misp_https_port: 8443
 cti_ss_misp_base_url: "https://10.30.30.10:8443"
@@ -41,4 +43,3 @@ cti_ss_misp_api_key_share_host: localhost
 cti_ss_misp_api_key_regex: "([a-fA-F0-9]{40})"
 cti_ss_misp_wait_retries: 20
 cti_ss_misp_wait_delay: 10
-cti_ss_misp_portainer_container: misp-docker-portainer-1

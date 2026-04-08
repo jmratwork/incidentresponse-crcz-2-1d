@@ -33,6 +33,7 @@ cicms_docker_apt_repo: "deb [arch={{ (ansible_architecture | default('amd64')) |
 cicms_dfir_archive_dest: /opt/dfir-iris-custom.zip
 cicms_dfir_extract_dir: /opt/
 cicms_dfir_project_dir: /opt/dfir-iris-custom
+cicms_dfir_env_file: "{{ cicms_dfir_project_dir }}/.env"
 
 cicms_registry:
   url: https://index.docker.io/v1/
@@ -42,4 +43,4 @@ cicms_registry:
 cicms_iris_misp_url: https://10.30.30.10:8443
 cicms_iris_misp_verify_cert: false
 cicms_misp_api_key_host: localhost
-cicms_portainer_container: dfir-iris-custom-portainer-1
+cicms_misp_api_key_fact_name: cti_ss_misp_api_key

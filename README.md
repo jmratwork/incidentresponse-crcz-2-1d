@@ -57,6 +57,11 @@ The tests verify that:
 
 Before executing Ansible playbooks, replace the password placeholders in `inventory.sample` by referencing secrets stored in Ansible Vault files or exported through environment variables. This keeps sensitive credentials out of the repository while preserving a working inventory template for the exercises.
 
+For subcase 1d provisioning, keep these external runtime dependencies available:
+- Docker Hub password variables (`CTI_SS_DOCKER_PASSWORD`, `CICMS_DOCKER_PASSWORD`).
+- SMB/CIFS share content required by containerized roles (for example `dfir-iris-custom.zip`).
+- `community.docker` Ansible collection installed on the control node.
+
 ## Licence
 
 The content is provided strictly for educational purposes.
