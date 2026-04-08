@@ -141,29 +141,29 @@
 
 - name: Create mount point
   ansible.builtin.file:
-    path: "{{ cicms_mount_point | default('/mnt/smb_shared') }}"
+    path: "{{ cicms_compose_source.mount_point }}"
     state: directory
     mode: "0775"
     
 - name: Mount SMB Share (guest)
   ansible.builtin.mount:
-    src: "{{ cicms_share | default('//10.250.232.198/shared') }}"
-    path: "{{ cicms_mount_point | default('/mnt/smb_shared') }}"
+    src: "{{ cicms_compose_source.share }}"
+    path: "{{ cicms_compose_source.mount_point }}"
     fstype: cifs
     opts: "guest,vers=3.0"
     state: mounted
 
 - name: Copy DFIR-IRIS zip from SMB to destination
   ansible.builtin.copy:
-    src: "{{ cicms_archive_share_path | default((cicms_mount_point | default('/mnt/smb_shared')) ~ '/dfir-iris-custom.zip') }}"
-    dest: "{{ cicms_archive_path | default('/opt/dfir-iris-custom.zip') }}"
+    src: "{{ cicms_compose_source.archive_path }}"
+    dest: "{{ cicms_dfir_archive_dest }}"
     remote_src: true
     mode: "0644"
 
 - name: Unzip DFIR-IRIS Docker
   ansible.builtin.unarchive:
-    src: "{{ cicms_archive_path | default('/opt/dfir-iris-custom.zip') }}"
-    dest: "{{ cicms_extract_dir | default('/opt/') }}"
+    src: "{{ cicms_dfir_archive_dest }}"
+    dest: "{{ cicms_dfir_extract_dir }}"
     remote_src: true
     extra_opts: ["-o"]
 
@@ -196,21 +196,21 @@
 
 - name: Inject MISP integration settings into DFIR-IRIS .env
   ansible.builtin.lineinfile:
-    path: "{{ cicms_project_dir | default('/opt/dfir-iris-custom') }}/.env"
+    path: "{{ cicms_dfir_project_dir }}/.env"
     regexp: '^IRIS_MISP_URL='
-    line: "IRIS_MISP_URL={{ cicms_misp_url | default('https://10.30.30.10:8443') }}"
+    line: "IRIS_MISP_URL={{ cicms_iris_misp_url }}"
     state: present
 
 - name: Disable SSL verification for MISP connection
   ansible.builtin.lineinfile:
-    path: "{{ cicms_project_dir | default('/opt/dfir-iris-custom') }}/.env"
+    path: "{{ cicms_dfir_project_dir }}/.env"
     regexp: '^IRIS_MISP_VERIFY_CERT='
-    line: "IRIS_MISP_VERIFY_CERT={{ cicms_verify_cert | default(false) | string | lower }}"
+    line: "IRIS_MISP_VERIFY_CERT={{ cicms_iris_misp_verify_cert | string | lower }}"
     state: present
 
 - name: Inject MISP key into DFIR-IRIS .env
   ansible.builtin.lineinfile:
-    path: "{{ cicms_project_dir | default('/opt/dfir-iris-custom') }}/.env"
+    path: "{{ cicms_dfir_project_dir }}/.env"
     regexp: '^IRIS_MISP_KEY='
     line: "IRIS_MISP_KEY={{ cicms_misp_api_key }}"
     state: present
@@ -218,7 +218,7 @@
 
 - name: Build and run DFIR-IRIS
   community.docker.docker_compose_v2:
-    project_src: "{{ cicms_project_dir | default('/opt/dfir-iris-custom') }}"
+    project_src: "{{ cicms_dfir_project_dir }}"
     state: present
     build: always
   register: dfir_iris_output
@@ -230,6 +230,6 @@
 
 - name: Unmount SMB share
   ansible.builtin.mount:
-    path: "{{ cicms_mount_point | default('/mnt/smb_shared') }}"
+    path: "{{ cicms_compose_source.mount_point }}"
     state: unmounted
   when: true
