@@ -14,16 +14,17 @@ This guide explains how to instantiate the CyberRangeCZ infrastructure aligned w
 
 ## 2. Prepare credentials
 
-1. Duplicate `inventory.sample` and rename it to `inventory.ini` (or keep the `.sample` extension).
-2. Keep the hostnames and IP addresses defined by the topology file.
-3. Export credentials as environment variables before executing Ansible, for example:
+1. Use `inventory.sample` as the canonical subcase 1d inventory template (copy it to `inventory.ini` if you want a local runtime file).
+2. Keep the host groups exactly as defined for subcase 1d: `ng-soc`, `ng-siem`, `ng-soar`, `cti-ss`, `cicms-operator`, `playbook-library`, `telemetry-feeder`.
+3. Keep the hostnames and IP addresses defined by the topology file.
+4. Export credentials as environment variables before executing Ansible, for example:
 
 ```bash
 export ANSIBLE_PASSWORD_NG_SOC='********'
 export ANSIBLE_PASSWORD_NG_SOAR='********'
 ```
 
-4. If you prefer to store secrets in Ansible Vault files, replace the `lookup('env', ...)` expressions with `ansible-vault` variables and reference the vault when running the playbooks.
+5. You can alternatively source secrets from Ansible Vault variables instead of environment variables; do not embed credentials in inventory files.
 
 ## 3. Install Ansible dependencies
 
