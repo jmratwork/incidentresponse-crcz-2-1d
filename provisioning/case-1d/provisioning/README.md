@@ -14,6 +14,8 @@ Automation assets for the NG-SOC ecosystem used during the playbook execution ex
 | `playbook_library` | `playbook-library` | Standards repository (NVD/NIST, MITRE ATT&CK) and lessons learnt. |
 | `telemetry_feeder` | `telemetry-feeder` | Generates telemetry samples for NG-SIEM validation. |
 
+> **Naming note (Subcase 1d):** keep `telemetry-feeder` as the canonical host/service name. Do not rename it to `telemetry-simulator`, as that alias is not used in the 1d topology or roles.
+
 ## Requirements
 
 - Ansible 2.15 or newer with the `community.general` collection available. Install the `pywinrm` Python package for WinRM connectivity when managing Windows hosts from the same control node (use `pywinrm[credssp]` where CredSSP is needed).
