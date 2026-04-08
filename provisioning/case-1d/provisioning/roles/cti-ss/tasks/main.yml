@@ -40,7 +40,6 @@
     - cti_ss_enable_healthchecks
     - cti_ssctl.stat.exists
 
-#Added Tasks
 - name: Install Docker prerequisites
   ansible.builtin.apt:
     name:
@@ -50,31 +49,29 @@
       - cifs-utils
       - unzip
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Create /etc/apt/keyrings directory
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Download Docker GPG key
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
+    url: "{{ cti_ss_docker_repo_url }}/gpg"
     dest: /etc/apt/keyrings/docker.asc
-    mode: '0644'
+    mode: "0644"
 
 - name: Add Docker APT repository
-  ansible.builtin.shell: |
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-  args:
-    creates: /etc/apt/sources.list.d/docker.list
-  register: repo_add
-  changed_when: repo_add.rc == 0
+  ansible.builtin.apt_repository:
+    repo: "{{ cti_ss_docker_apt_repo }}"
+    filename: docker
+    state: present
 
 - name: Update APT cache after adding repository
   ansible.builtin.apt:
-    update_cache: yes
+    update_cache: true
 
 - name: Install Docker packages
   ansible.builtin.apt:
@@ -85,20 +82,20 @@
       - docker-buildx-plugin
       - docker-compose-plugin
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Ensure Docker service is started and enabled
   ansible.builtin.service:
     name: docker
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Create mount point
   ansible.builtin.file:
     path: "{{ cti_ss_compose_source.mount_point }}"
     state: directory
     mode: "0775"
-    
+
 - name: Mount SMB Share (guest)
   ansible.builtin.mount:
     src: "{{ cti_ss_compose_source.share }}"
@@ -108,52 +105,55 @@
     state: mounted
 
 - name: Create MISP directory for the git repo
-  file:
+  ansible.builtin.file:
     path: "{{ cti_ss_misp_project_dir }}"
     state: directory
     mode: "0755"
 
-- name: Login to Docker Hub
+- name: Login to Docker registry
   community.docker.docker_login:
     registry_url: "{{ cti_ss_registry.url }}"
     username: "{{ cti_ss_registry.username }}"
-    password: "{{ cti_ss_docker_password }}"
+    password: "{{ cti_ss_registry.password }}"
+  when:
+    - cti_ss_registry.username | default('') | trim | length > 0
+    - cti_ss_registry.password | default('') | trim | length > 0
   no_log: true
 
 - name: Download MISP docker
-  git:
+  ansible.builtin.git:
     repo: "{{ cti_ss_misp_repo }}"
     dest: "{{ cti_ss_misp_project_dir }}"
     version: "{{ cti_ss_misp_repo_version }}"
-  
+
 - name: Copy MISP env
-  copy:
+  ansible.builtin.copy:
     src: "{{ cti_ss_misp_project_dir }}/template.env"
     dest: "{{ cti_ss_misp_project_dir }}/.env"
-    remote_src: yes
+    remote_src: true
 
 - name: Change env http port for MISP
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "{{ cti_ss_misp_project_dir }}/.env"
     regexp: '^#?\s*CORE_HTTP_PORT='
     line: "CORE_HTTP_PORT={{ cti_ss_misp_http_port }}"
     state: present
 
 - name: Change env https port for MISP
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "{{ cti_ss_misp_project_dir }}/.env"
     regexp: '^#?\s*CORE_HTTPS_PORT='
     line: "CORE_HTTPS_PORT={{ cti_ss_misp_https_port }}"
     state: present
 
 - name: Change BASE_URL in env for MISP
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "{{ cti_ss_misp_project_dir }}/.env"
     regexp: '^#?\s*BASE_URL='
-    line: "BASE_URL={{ cti_ss_misp_base_url }}"
+    line: "BASE_URL={{ cti_ss_misp_url }}"
     state: present
     insertafter: EOF
-    backup: yes
+    backup: true
 
 - name: Deployment of MISP Docker
   community.docker.docker_compose_v2:
@@ -162,17 +162,42 @@
     build: always
   register: misp_output
 
+- name: Wait for MISP core container readiness
+  community.docker.docker_container_info:
+    name: "{{ cti_ss_misp_container_core_name }}"
+  register: cti_ss_misp_core_info
+  retries: 30
+  delay: 10
+  until:
+    - cti_ss_misp_core_info.exists
+    - cti_ss_misp_core_info.container is defined
+    - cti_ss_misp_core_info.container.State is defined
+    - cti_ss_misp_core_info.container.State.Running | default(false)
+
 - name: Get or generate MISP API key for admin user
   community.docker.docker_container_exec:
-    container: "{{ cti_ss_misp_core_container }}"
+    container: "{{ cti_ss_misp_container_core_name }}"
     command: "/var/www/MISP/app/Console/cake user change_authkey {{ cti_ss_misp_admin_user }}"
   register: misp_user_info
   no_log: true
 
-- name: Save MISP API key fact
+- name: Parse MISP API key
   ansible.builtin.set_fact:
-    cti_ss_misp_api_key: "{{ misp_user_info.stdout.split('Old authentication keys disabled and new key created: ')[1] | trim }}"
+    cti_ss_misp_api_key: >-
+      {{
+        (
+          (misp_user_info.stdout | default('')) ~ '\n' ~ (misp_user_info.stderr | default(''))
+        )
+        | regex_search(cti_ss_misp_api_key_regex, '\\1')
+        | default('')
+      }}
     cacheable: true
-  delegate_to: cti-ss
+  no_log: true
+
+- name: Share MISP API key fact
+  ansible.builtin.set_fact:
+    cti_ss_misp_api_key: "{{ cti_ss_misp_api_key }}"
+    cacheable: true
+  delegate_to: "{{ cti_ss_fact_delegate_host }}"
   delegate_facts: true
   no_log: true
