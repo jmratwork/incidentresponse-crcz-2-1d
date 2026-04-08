@@ -35,7 +35,7 @@ See Figure 6 for the segment of the CYNET activity diagram relevant to this subc
 - `training_linear.json`: lists the learning modules that support the NG-SOC automation scenario in subcase 1d, including step-by-step activities and the tools involved.
 - `topology.yml`: KYPO-compatible topology for the NG-SOC exercise sandbox, matching the provisioning descriptors.
 - `docs/`: support materials and complementary guides. `docs/provisioning-guide.md` explains how to deploy the infrastructure required for subcase 1d.
-- `inventory.sample`: template inventory with placeholder credentials; load secrets at runtime via Ansible Vault or environment variables instead of committing them to version control.
+- `inventory.sample`: canonical subcase 1d inventory template with the host groups `ng-soc`, `ng-siem`, `ng-soar`, `cti-ss`, `cicms-operator`, `playbook-library` and `telemetry-feeder`. Provide secrets at runtime via environment variables or Ansible Vault (do not commit credentials).
 - `provisioning/`: KYPO/CRCZ topology files and Ansible playbooks that replicate the infrastructure defined in the CYNET activity diagram for the 1d flow.
 
 ## Validating the repository
@@ -55,7 +55,7 @@ The tests verify that:
 
 ## Credential management
 
-Before executing Ansible playbooks, replace the password placeholders in `inventory.sample` by referencing secrets stored in Ansible Vault files or exported through environment variables. This keeps sensitive credentials out of the repository while preserving a working inventory template for the exercises.
+Before executing Ansible playbooks, keep credentials outside the repository by supplying them through environment variables or Ansible Vault values referenced from `inventory.sample`.
 
 For subcase 1d provisioning, keep these external runtime dependencies available:
 - Docker Hub password variables (`CTI_SS_DOCKER_PASSWORD`, `CICMS_DOCKER_PASSWORD`).
