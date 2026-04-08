@@ -18,10 +18,6 @@ cti_ss_bind_host: 0.0.0.0
 cti_ss_bind_port: 9000
 cti_ss_healthcheck_command: "/usr/bin/cti-ssctl status"
 
-cti_ss_compose_source:
-  share: "//10.250.232.198/shared"
-  mount_point: /mnt/smb_shared
-  mount_opts: guest,vers=3.0
 cti_ss_docker_apt_gpg_url: https://download.docker.com/linux/ubuntu/gpg
 cti_ss_docker_apt_repo: "deb [arch={{ (ansible_architecture | default('amd64')) | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
 
