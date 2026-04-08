@@ -27,9 +27,22 @@ cicms_nginx_binary_path: /usr/sbin/nginx
 cicms_compose_source:
   mount_point: /mnt/smb_shared
   share: //10.250.232.198/shared
+  mount_opts: guest,vers=3.0
   archive_path: "{{ cicms_compose_source.mount_point }}/dfir-iris-custom.zip"
 cicms_dfir_archive_dest: /opt/dfir-iris-custom.zip
 cicms_dfir_extract_dir: /opt/
 cicms_dfir_project_dir: /opt/dfir-iris-custom
+
+cicms_docker_apt_gpg_url: https://download.docker.com/linux/ubuntu/gpg
+cicms_docker_apt_repo: >-
+  deb [arch={{ {'x86_64': 'amd64', 'aarch64': 'arm64'}[ansible_architecture] | default(ansible_architecture) }}
+  signed-by=/etc/apt/keyrings/docker.asc]
+  https://download.docker.com/linux/ubuntu
+  {{ ansible_distribution_release }} stable
+
 cicms_iris_misp_url: https://10.30.30.10:8443
 cicms_iris_misp_verify_cert: false
+cicms_misp_fact_source:
+  host: cti-ss
+  preferred_key: cti_ss_misp_api_key
+  fallback_key: misp_api_key
