@@ -48,13 +48,13 @@
 
 - name: Download Docker GPG key
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
+    url: "{{ cti_ss_docker_apt_gpg_url }}"
     dest: /etc/apt/keyrings/docker.asc
     mode: "0644"
 
 - name: Add Docker APT repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch={{ (ansible_architecture | default('amd64')) | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    repo: "{{ cti_ss_docker_apt_repo }}"
     state: present
     filename: docker
     update_cache: true
@@ -146,6 +146,16 @@
     build: always
   register: cti_ss_misp_output
 
+- name: Wait until MISP core container is running
+  community.docker.docker_container_info:
+    name: "{{ cti_ss_misp_core_container }}"
+  register: cti_ss_misp_core_info
+  until:
+    - cti_ss_misp_core_info.exists | bool
+    - cti_ss_misp_core_info.container.State.Running | default(false) | bool
+  retries: "{{ cti_ss_misp_wait_retries }}"
+  delay: "{{ cti_ss_misp_wait_delay }}"
+
 - name: Get or generate MISP API key for admin user
   community.docker.docker_container_exec:
     container: "{{ cti_ss_misp_core_container }}"
@@ -155,9 +165,22 @@
 
 - name: Save MISP API key fact for cross-role reuse
   ansible.builtin.set_fact:
-    cti_ss_misp_api_key: "{{ cti_ss_misp_user_info.stdout.split('Old authentication keys disabled and new key created: ')[1] | trim }}"
+    cti_ss_misp_api_key: "{{ cti_ss_misp_user_info.stdout | regex_search(cti_ss_misp_api_key_regex) }}"
     cacheable: true
   no_log: true
+
+- name: Share MISP API key with other hosts in the same playbook run
+  ansible.builtin.set_fact:
+    cti_ss_misp_api_key: "{{ cti_ss_misp_api_key }}"
+  delegate_to: "{{ cti_ss_misp_api_key_share_host }}"
+  delegate_facts: true
+  no_log: true
+
+- name: Ensure Portainer container is absent on CTI-SS
+  community.docker.docker_container:
+    name: "{{ cti_ss_misp_portainer_container }}"
+    state: absent
+  failed_when: false
 
 - name: Unmount CTI-SS SMB share
   ansible.builtin.mount:
