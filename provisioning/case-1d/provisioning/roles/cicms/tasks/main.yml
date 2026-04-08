@@ -106,17 +106,15 @@
 
 - name: Download Docker GPG key
   ansible.builtin.get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
+    url: "{{ cicms_docker_apt_gpg_url }}"
     dest: /etc/apt/keyrings/docker.asc
     mode: '0644'
 
 - name: Add Docker APT repository
-  ansible.builtin.shell: |
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-  args:
-    creates: /etc/apt/sources.list.d/docker.list
-  register: repo_add
-  changed_when: repo_add.rc == 0
+  ansible.builtin.apt_repository:
+    repo: "{{ cicms_docker_apt_repo }}"
+    filename: docker
+    state: present
 
 - name: Update APT cache after adding repository
   ansible.builtin.apt:
@@ -150,7 +148,7 @@
     src: "{{ cicms_compose_source.share }}"
     path: "{{ cicms_compose_source.mount_point }}"
     fstype: cifs
-    opts: "guest,vers=3.0"
+    opts: "{{ cicms_compose_source.mount_opts }}"
     state: mounted
 
 - name: Copy DFIR-IRIS zip from SMB to destination
@@ -169,20 +167,44 @@
 
 - name: Login to Docker Hub
   community.docker.docker_login:
-    username: "{{ cicms_registry.username | default('demongsoc') }}"
-    password: "{{ cicms_registry.password | default(lookup('ansible.builtin.env', 'CICMS_REGISTRY_PASSWORD'), true) }}"
+    username: "{{ cicms_registry.username }}"
+    password: "{{ cicms_registry.password }}"
   no_log: true
+  when:
+    - cicms_registry is defined
+    - cicms_registry.username is defined
+    - cicms_registry.password is defined
+    - cicms_registry.username | length > 0
+    - cicms_registry.password | length > 0
+
+- name: Determine MISP fact source host
+  ansible.builtin.set_fact:
+    cicms_misp_source_host: >-
+      {{
+        (
+          cicms_misp_fact_source.host
+          if cicms_misp_fact_source.host in hostvars
+          else (
+            groups[cicms_misp_fact_source.host][0]
+            if (
+              cicms_misp_fact_source.host in groups
+              and (groups[cicms_misp_fact_source.host] | length) > 0
+            )
+            else ''
+          )
+        )
+      }}
 
 - name: Resolve MISP API key exported by cti-ss
   ansible.builtin.set_fact:
     cicms_misp_api_key: >-
       {{
         (
-          hostvars[groups['cti-ss'][0]].cti_ss_misp_api_key
-          | default(hostvars[groups['cti-ss'][0]].misp_api_key, true)
+          hostvars[cicms_misp_source_host][cicms_misp_fact_source.preferred_key]
+          | default(hostvars[cicms_misp_source_host][cicms_misp_fact_source.fallback_key], true)
           | default('', true)
         )
-        if ('cti-ss' in groups and (groups['cti-ss'] | length) > 0)
+        if (cicms_misp_source_host | length > 0)
         else ''
       }}
 
@@ -191,8 +213,8 @@
     that:
       - cicms_misp_api_key | length > 0
     fail_msg: >-
-      MISP API key not found. Ensure cti-ss exports cti_ss_misp_api_key and
-      that host group 'cti-ss' contains at least one host.
+      MISP API key not found. Ensure {{ cicms_misp_source_host | default(cicms_misp_fact_source.host, true) }}
+      exports {{ cicms_misp_fact_source.preferred_key }} (or {{ cicms_misp_fact_source.fallback_key }}).
 
 - name: Inject MISP integration settings into DFIR-IRIS .env
   ansible.builtin.lineinfile:
