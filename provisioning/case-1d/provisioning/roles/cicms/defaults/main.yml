@@ -23,3 +23,13 @@ cicms_healthcheck:
   validate_certs: false
 cicms_enable_nginx_checks: true  # Disable when nginx runs only in the scenario containers
 cicms_nginx_binary_path: /usr/sbin/nginx
+
+cicms_compose_source:
+  mount_point: /mnt/smb_shared
+  share: //10.250.232.198/shared
+  archive_path: "{{ cicms_compose_source.mount_point }}/dfir-iris-custom.zip"
+cicms_dfir_archive_dest: /opt/dfir-iris-custom.zip
+cicms_dfir_extract_dir: /opt/
+cicms_dfir_project_dir: /opt/dfir-iris-custom
+cicms_iris_misp_url: https://10.30.30.10:8443
+cicms_iris_misp_verify_cert: false
