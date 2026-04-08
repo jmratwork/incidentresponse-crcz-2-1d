@@ -14,7 +14,7 @@ Automation assets for the NG-SOC ecosystem used during the playbook execution ex
 | `playbook_library` | `playbook-library` | Standards repository (NVD/NIST, MITRE ATT&CK) and lessons learnt. |
 | `telemetry_feeder` | `telemetry-feeder` | Generates telemetry samples for NG-SIEM validation. |
 
-> **Naming note (Subcase 1d):** keep `telemetry-feeder` as the canonical host/service name. Do not rename it to `telemetry-simulator`, as that alias is not used in the 1d topology or roles.
+> **Naming note (Subcase 1d):** keep `telemetry-feeder` as the canonical host/service name in topology, inventories, roles and playbooks.
 
 ## Requirements
 
