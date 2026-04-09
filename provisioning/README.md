@@ -83,4 +83,38 @@ Each `tasks/main.yml` applies the templates with idempotent modules (`ansible.bu
 
 ## Synchronisation policy
 
-For Subcase 1d, the source of truth is `provisioning/case-1d/provisioning/roles/*`. The top-level `provisioning/roles/*` tree is maintained only as a compatibility mirror and should receive only deliberate, minimal backports when needed.
+For Subcase 1d, the source of truth is `provisioning/case-1d/provisioning/roles/*`.
+The top-level `provisioning/roles/*` tree is a compatibility mirror and must be kept aligned unless there is a documented exception.
+
+### Backport policy (canonical -> mirror)
+
+1. Apply all functional changes first in `provisioning/case-1d/provisioning/roles/*`.
+2. Decide if the same change is needed for compatibility consumers:
+   - If **yes**, backport to `provisioning/roles/*` in the same PR/commit whenever possible.
+   - If **no**, add or update an exception in `provisioning/roles-sync-allowlist.yml` with a concrete reason.
+3. Run drift validation before pushing changes.
+
+### Drift validation
+
+Use the policy checker:
+
+```bash
+python provisioning/scripts/check_roles_sync.py
+```
+
+The checker compares canonical vs mirror trees and fails when:
+- there is drift not listed in `provisioning/roles-sync-allowlist.yml`, or
+- the allowlist contains stale entries that no longer correspond to real drift.
+
+### CI and pre-commit integration
+
+- CI path: the test suite includes a `test_roles_sync_policy_check` test (`pytest`) that executes `check_roles_sync.py`.
+- Pre-commit path: `.pre-commit-config.yaml` runs the same script so drift is caught before commit.
+
+Install and run pre-commit locally:
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```

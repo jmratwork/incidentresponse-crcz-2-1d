@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: roles-sync-drift-check
+        name: Validate roles sync drift policy
+        entry: python provisioning/scripts/check_roles_sync.py
+        language: system
+        pass_filenames: false
+        files: ^provisioning/
