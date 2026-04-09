@@ -56,15 +56,18 @@ The tests verify that:
 
 ## Credential management
 
-Before executing Ansible playbooks, keep credentials outside the repository by supplying them through environment variables or Ansible Vault values referenced from `inventory.sample`.
+Before executing Ansible playbooks, **secret injection is mandatory**: keep credentials outside the repository and provide them only through Ansible Vault values or environment-variable lookups referenced from `inventory.sample`.
 
-The roles `ng-siem`, `ng-soar` and `telemetry-feeder` now fail fast with `ansible.builtin.assert` if any of these sensitive values stays empty or set to `changeme`:
+The affected roles fail fast with `ansible.builtin.assert` if sensitive values are empty or set to `changeme`:
 
+- `cti_ss_taxii_siem_password`
+- `cti_ss_taxii_telemetry_password`
 - `ng_siem_pipeline.sources[cti_taxii].password`
 - `ng_soar_integrations[siem_ingest].token`
 - `telemetry_feeder_agent.outputs[taxii].password`
+- `cicms_registry.password` (when `cicms_registry.username` is defined)
 
-Set them from Vault or environment lookups before execution (for example `lookup('env', 'NG_SIEM_TAXII_PASSWORD')`, `lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN')`, `lookup('env', 'TELEMETRY_FEEDER_TAXII_PASSWORD')`).
+Set them from Vault or environment lookups before execution (for example `lookup('env', 'CTI_SS_TAXII_SIEM_PASSWORD')`, `lookup('env', 'CTI_SS_TAXII_TELEMETRY_PASSWORD')`, `lookup('env', 'NG_SIEM_TAXII_PASSWORD')`, `lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN')`, `lookup('env', 'TELEMETRY_FEEDER_TAXII_PASSWORD')`, `lookup('env', 'CICMS_DOCKER_PASSWORD')`).
 
 For subcase 1d provisioning, keep these external runtime dependencies available:
 - Docker Hub password variables (`CTI_SS_DOCKER_PASSWORD`, `CICMS_DOCKER_PASSWORD`).
