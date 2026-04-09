@@ -1,4 +1,19 @@
 ---
+- name: Validate CTI-SS sensitive secrets
+  ansible.builtin.assert:
+    that:
+      - cti_ss_taxii_siem_password | default('') | string | trim | length > 0
+      - (cti_ss_taxii_siem_password | default('') | string | trim | lower) != 'changeme'
+      - cti_ss_taxii_telemetry_password | default('') | string | trim | length > 0
+      - (cti_ss_taxii_telemetry_password | default('') | string | trim | lower) != 'changeme'
+    fail_msg: >-
+      Debes inyectar secretos reales para `cti_ss_taxii_siem_password` y
+      `cti_ss_taxii_telemetry_password` usando Ansible Vault o
+      `lookup('env', ...)`.
+    success_msg: Secretos de CTI-SS validados.
+    quiet: true
+  no_log: true
+
 - name: Ensure CTI sharing service directory exists
   ansible.builtin.file:
     path: "{{ cti_ss_taxii_config | dirname }}"

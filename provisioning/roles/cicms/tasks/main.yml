@@ -1,4 +1,19 @@
 ---
+- name: Validate CICMS sensitive secrets
+  ansible.builtin.assert:
+    that:
+      - cicms_registry.username | default('') | string | trim | length == 0 or
+        cicms_registry.password | default('') | string | trim | length > 0
+      - cicms_registry.username | default('') | string | trim | length == 0 or
+        (cicms_registry.password | default('') | string | trim | lower) != 'changeme'
+    fail_msg: >-
+      Si defines `cicms_registry.username`, debes inyectar
+      `cicms_registry.password` con un secreto real usando Ansible Vault o
+      `lookup('env', 'CICMS_DOCKER_PASSWORD')`.
+    success_msg: Secretos de CICMS validados.
+    quiet: true
+  no_log: true
+
 - name: Ensure CICMS directories exist
   ansible.builtin.file:
     path: "{{ item }}"
