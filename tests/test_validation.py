@@ -1,4 +1,5 @@
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -116,3 +117,15 @@ def test_kypo_topologies(topology_path):
         assert mapping["network"] in networks, (
             f"Router mapping references unknown network '{mapping['network']}' in {topology_path.name}"
         )
+
+
+def test_roles_sync_policy_check():
+    check_script = REPO_ROOT / "provisioning" / "scripts" / "check_roles_sync.py"
+    result = subprocess.run(
+        ["python", str(check_script)],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
