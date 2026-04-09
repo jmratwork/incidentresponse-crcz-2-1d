@@ -1,11 +1,21 @@
 import json
 import subprocess
+import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+ROLES_SYNC_SCRIPT = REPO_ROOT / "provisioning" / "scripts" / "check_roles_sync.py"
+
+_spec = importlib.util.spec_from_file_location("check_roles_sync", ROLES_SYNC_SCRIPT)
+_check_roles_sync = importlib.util.module_from_spec(_spec)
+assert _spec and _spec.loader
+sys.modules[_spec.name] = _check_roles_sync
+_spec.loader.exec_module(_check_roles_sync)
+_load_allowlist = _check_roles_sync._load_allowlist
 
 
 @pytest.fixture(scope="module")
@@ -120,12 +130,38 @@ def test_kypo_topologies(topology_path):
 
 
 def test_roles_sync_policy_check():
-    check_script = REPO_ROOT / "provisioning" / "scripts" / "check_roles_sync.py"
     result = subprocess.run(
-        ["python", str(check_script)],
+        ["python", str(ROLES_SYNC_SCRIPT)],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
         check=False,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_roles_sync_allowlist_requires_reason(tmp_path):
+    allowlist = tmp_path / "allowlist.yml"
+    allowlist.write_text(
+        "allowed_drift:\n"
+        "  - path: ng-siem/tasks/main.yml\n"
+        "    kinds: [content]\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="reason"):
+        _load_allowlist(allowlist)
+
+
+def test_roles_sync_allowlist_rejects_unknown_kind(tmp_path):
+    allowlist = tmp_path / "allowlist.yml"
+    allowlist.write_text(
+        "allowed_drift:\n"
+        "  - path: ng-siem/tasks/main.yml\n"
+        "    kinds: [renamed]\n"
+        "    reason: test\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="unsupported kind"):
+        _load_allowlist(allowlist)

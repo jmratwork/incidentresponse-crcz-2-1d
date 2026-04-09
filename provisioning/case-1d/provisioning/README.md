@@ -86,3 +86,15 @@ Each `tasks/main.yml` applies the templates with idempotent modules (`ansible.bu
 ## Synchronisation policy
 
 For Subcase 1d, the source of truth is `provisioning/case-1d/provisioning/roles/*`. The top-level `provisioning/roles/*` tree is maintained only as a compatibility mirror and should receive only deliberate, minimal backports when needed.
+
+### Backport flow and drift guard
+
+1. Implement role changes first in `provisioning/case-1d/provisioning/roles/*`.
+2. Backport the same changes into `provisioning/roles/*` when compatibility consumers require them.
+3. If a difference must remain intentional, register it in `provisioning/roles-sync-allowlist.yml` with a specific `reason`.
+4. Validate drift with `python provisioning/scripts/check_roles_sync.py`.
+
+The repository blocks unsynchronised drift through:
+- pre-commit hook `roles-sync-drift-check` in `.pre-commit-config.yaml`;
+- CI workflow `.github/workflows/roles-sync-drift.yml`;
+- `pytest` policy test `test_roles_sync_policy_check`.
