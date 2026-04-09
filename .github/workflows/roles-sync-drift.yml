@@ -1,0 +1,39 @@
+name: Roles sync drift guard
+
+on:
+  pull_request:
+    paths:
+      - 'provisioning/**'
+      - 'tests/**'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/roles-sync-drift.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'provisioning/**'
+      - 'tests/**'
+      - '.pre-commit-config.yaml'
+      - '.github/workflows/roles-sync-drift.yml'
+
+jobs:
+  roles-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Drift policy check
+        run: python provisioning/scripts/check_roles_sync.py
+
+      - name: Pytest guard
+        run: pytest tests/test_validation.py -k roles_sync

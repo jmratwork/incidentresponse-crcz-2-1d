@@ -11,6 +11,8 @@ from pathlib import Path
 
 import yaml
 
+ALLOWED_KINDS = {"any", "content", "missing_in_mirror", "missing_in_canonical"}
+
 
 @dataclass(frozen=True)
 class DriftIssue:
@@ -37,6 +39,9 @@ def _collect_files(root: Path) -> dict[str, Path]:
 
 
 def _load_allowlist(path: Path) -> dict[str, set[str]]:
+    if not path.exists():
+        raise FileNotFoundError(f"Allowlist file not found: {path}")
+
     with path.open("r", encoding="utf-8") as handle:
         data = yaml.safe_load(handle) or {}
 
@@ -51,12 +56,23 @@ def _load_allowlist(path: Path) -> dict[str, set[str]]:
         rel_path = entry.get("path")
         if not isinstance(rel_path, str) or not rel_path:
             raise ValueError(f"Entry {idx} must define a non-empty 'path'")
+        if rel_path.startswith("/"):
+            raise ValueError(f"Entry {idx} path must be relative: {rel_path}")
+        reason = entry.get("reason")
+        if not isinstance(reason, str) or not reason.strip():
+            raise ValueError(f"Entry {idx} must define a non-empty 'reason'")
 
         kinds = entry.get("kinds", ["any"])
         if isinstance(kinds, str):
             kinds = [kinds]
         if not isinstance(kinds, list) or not kinds:
             raise ValueError(f"Entry {idx} has invalid 'kinds' value")
+        for kind in kinds:
+            if str(kind) not in ALLOWED_KINDS:
+                raise ValueError(
+                    f"Entry {idx} has unsupported kind '{kind}'. "
+                    f"Expected one of {sorted(ALLOWED_KINDS)}"
+                )
 
         parsed.setdefault(rel_path, set()).update(str(kind) for kind in kinds)
 
@@ -125,7 +141,18 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    allowlist = _load_allowlist(args.allowlist)
+    if not args.canonical_root.is_dir():
+        print(f"ERROR: canonical root does not exist: {args.canonical_root}")
+        return 2
+    if not args.mirror_root.is_dir():
+        print(f"ERROR: mirror root does not exist: {args.mirror_root}")
+        return 2
+
+    try:
+        allowlist = _load_allowlist(args.allowlist)
+    except (FileNotFoundError, ValueError, yaml.YAMLError) as exc:
+        print(f"ERROR: invalid allowlist configuration: {exc}")
+        return 2
     all_issues = find_drift(args.canonical_root, args.mirror_root)
 
     unauthorized = [issue for issue in all_issues if not _is_allowed(allowlist, issue)]

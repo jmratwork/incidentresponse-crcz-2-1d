@@ -112,7 +112,8 @@ The checker compares canonical vs mirror trees and fails when:
 
 ### CI and pre-commit integration
 
-- CI path: the test suite includes a `test_roles_sync_policy_check` test (`pytest`) that executes `check_roles_sync.py`.
+- CI path: `.github/workflows/roles-sync-drift.yml` executes `check_roles_sync.py` and `pytest tests/test_validation.py -k roles_sync` on PRs/pushes affecting provisioning files.
+- CI path (full suite): the test suite includes a `test_roles_sync_policy_check` test (`pytest`) that executes `check_roles_sync.py`.
 - Pre-commit path: `.pre-commit-config.yaml` runs the same script so drift is caught before commit.
 
 Install and run pre-commit locally:
