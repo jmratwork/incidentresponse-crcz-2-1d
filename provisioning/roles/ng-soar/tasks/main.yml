@@ -1,3 +1,29 @@
+- name: Validate NG-SOAR sensitive secrets
+  ansible.builtin.assert:
+    that:
+      - (ng_soar_integrations | default([]))
+        | selectattr('name', 'equalto', 'siem_ingest')
+        | map(attribute='token')
+        | first
+        | default('')
+        | string
+        | trim
+        | length > 0
+      - ((ng_soar_integrations | default([]))
+        | selectattr('name', 'equalto', 'siem_ingest')
+        | map(attribute='token')
+        | first
+        | default('')
+        | string
+        | trim
+        | lower) != 'changeme'
+    fail_msg: >-
+      Debes sobreescribir `ng_soar_integrations[siem_ingest].token` con un
+      secreto real (por ejemplo usando Ansible Vault o `lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN')`).
+    success_msg: Secretos de NG-SOAR validados.
+    quiet: true
+  no_log: true
+
 - name: Ensure ng-soar group exists
   ansible.builtin.group:
     name: ng-soar
