@@ -1,5 +1,17 @@
 # NOTE: Store real credentials in Ansible Vault or environment variables before running playbooks.
 # Example: export ANSIBLE_PASSWORD_NG_SOC and reference it as ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SOC') }}"
+# Required role secrets (must not be empty or "changeme"):
+#   ng_siem_pipeline:
+#     sources:
+#       - name: cti_taxii
+#         password: "{{ lookup('env', 'NG_SIEM_TAXII_PASSWORD') }}"
+#   ng_soar_integrations:
+#     - name: siem_ingest
+#       token: "{{ lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN') }}"
+#   telemetry_feeder_agent:
+#     outputs:
+#       - type: taxii
+#         password: "{{ lookup('env', 'TELEMETRY_FEEDER_TAXII_PASSWORD') }}"
 
 [ng-soc]
 ng-soc ansible_host=10.30.10.10 ansible_user=ubuntu ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SOC') }}"

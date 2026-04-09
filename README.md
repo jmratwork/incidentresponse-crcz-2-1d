@@ -58,6 +58,14 @@ The tests verify that:
 
 Before executing Ansible playbooks, keep credentials outside the repository by supplying them through environment variables or Ansible Vault values referenced from `inventory.sample`.
 
+The roles `ng-siem`, `ng-soar` and `telemetry-feeder` now fail fast with `ansible.builtin.assert` if any of these sensitive values stays empty or set to `changeme`:
+
+- `ng_siem_pipeline.sources[cti_taxii].password`
+- `ng_soar_integrations[siem_ingest].token`
+- `telemetry_feeder_agent.outputs[taxii].password`
+
+Set them from Vault or environment lookups before execution (for example `lookup('env', 'NG_SIEM_TAXII_PASSWORD')`, `lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN')`, `lookup('env', 'TELEMETRY_FEEDER_TAXII_PASSWORD')`).
+
 For subcase 1d provisioning, keep these external runtime dependencies available:
 - Docker Hub password variables (`CTI_SS_DOCKER_PASSWORD`, `CICMS_DOCKER_PASSWORD`).
 - SMB/CIFS share content required by containerized roles (for example `dfir-iris-custom.zip`).

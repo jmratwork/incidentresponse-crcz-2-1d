@@ -1,4 +1,30 @@
 ---
+- name: Validate NG-SIEM sensitive secrets
+  ansible.builtin.assert:
+    that:
+      - (ng_siem_pipeline.sources | default([]))
+        | selectattr('name', 'equalto', 'cti_taxii')
+        | map(attribute='password')
+        | first
+        | default('')
+        | string
+        | trim
+        | length > 0
+      - ((ng_siem_pipeline.sources | default([]))
+        | selectattr('name', 'equalto', 'cti_taxii')
+        | map(attribute='password')
+        | first
+        | default('')
+        | string
+        | trim
+        | lower) != 'changeme'
+    fail_msg: >-
+      Debes sobreescribir `ng_siem_pipeline.sources[cti_taxii].password` con un
+      secreto real (por ejemplo usando Ansible Vault o `lookup('env', 'NG_SIEM_TAXII_PASSWORD')`).
+    success_msg: Secretos de NG-SIEM validados.
+    quiet: true
+  no_log: true
+
 - name: Ensure ng-siem service identity exists
   ansible.builtin.group:
     name: ng-siem

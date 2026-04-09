@@ -1,3 +1,30 @@
+- name: Validate telemetry-feeder sensitive secrets
+  ansible.builtin.assert:
+    that:
+      - (telemetry_feeder_agent.outputs | default([]))
+        | selectattr('type', 'equalto', 'taxii')
+        | map(attribute='password')
+        | first
+        | default('')
+        | string
+        | trim
+        | length > 0
+      - ((telemetry_feeder_agent.outputs | default([]))
+        | selectattr('type', 'equalto', 'taxii')
+        | map(attribute='password')
+        | first
+        | default('')
+        | string
+        | trim
+        | lower) != 'changeme'
+    fail_msg: >-
+      Debes sobreescribir `telemetry_feeder_agent.outputs[taxii].password` con
+      un secreto real (por ejemplo usando Ansible Vault o
+      `lookup('env', 'TELEMETRY_FEEDER_TAXII_PASSWORD')`).
+    success_msg: Secretos de telemetry-feeder validados.
+    quiet: true
+  no_log: true
+
 - name: Ensure telemetry service group exists
   ansible.builtin.group:
     name: telemetry
