@@ -37,6 +37,7 @@ See Figure 6 for the segment of the CYNET activity diagram relevant to this subc
 - `docs/`: support materials and complementary guides. `docs/provisioning-guide.md` explains how to deploy the infrastructure required for subcase 1d.
 - `inventory.sample`: canonical subcase 1d inventory template with the host groups `ng-soc`, `ng-siem`, `ng-soar`, `cti-ss`, `cicms-operator`, `playbook-library` and `telemetry-feeder`. Provide secrets at runtime via environment variables or Ansible Vault (do not commit credentials).
 - `provisioning/`: KYPO/CRCZ topology files and Ansible playbooks that replicate the infrastructure defined in the CYNET activity diagram for the 1d flow.
+- Docker-based services in subcase 1d are implemented with a **selective decomposition** of upstream `ng-soc-ansible` `docker_server` tasks into local roles (`cti-ss`, `cicms`, `ng-siem`, `ng-soar`), not by importing a monolithic `docker_server` role.
 
 ## Validating the repository
 
@@ -60,17 +61,17 @@ Before executing Ansible playbooks, **secret injection is mandatory**: keep cred
 
 The affected roles fail fast with `ansible.builtin.assert` if sensitive values are empty or set to `changeme`:
 
-- `cti_ss_taxii_siem_password`
-- `cti_ss_taxii_telemetry_password`
+- `cti_ss_taxii_siem_ingestor_password`
+- `cti_ss_taxii_telemetry_feeder_password`
 - `ng_siem_pipeline.sources[cti_taxii].password`
 - `ng_soar_integrations[siem_ingest].token`
 - `telemetry_feeder_agent.outputs[taxii].password`
 - `cicms_registry.password` (when `cicms_registry.username` is defined)
 
-Set them from Vault or environment lookups before execution (for example `lookup('env', 'CTI_SS_TAXII_SIEM_PASSWORD')`, `lookup('env', 'CTI_SS_TAXII_TELEMETRY_PASSWORD')`, `lookup('env', 'NG_SIEM_TAXII_PASSWORD')`, `lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN')`, `lookup('env', 'TELEMETRY_FEEDER_TAXII_PASSWORD')`, `lookup('env', 'CICMS_DOCKER_PASSWORD')`).
+Set them from Vault or environment lookups before execution (for example `lookup('env', 'CTI_SS_TAXII_SIEM_INGESTOR_PASSWORD')`, `lookup('env', 'CTI_SS_TAXII_TELEMETRY_FEEDER_PASSWORD')`, `lookup('env', 'NG_SIEM_TAXII_PASSWORD')`, `lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN')`, `lookup('env', 'TELEMETRY_FEEDER_TAXII_PASSWORD')`, `lookup('env', 'CICMS_DOCKER_PASSWORD')`).
 
 For subcase 1d provisioning, keep these external runtime dependencies available:
-- Docker Hub password variables (`CTI_SS_DOCKER_PASSWORD`, `CICMS_DOCKER_PASSWORD`).
+- Docker Hub password variables (`CTI_SS_REGISTRY_PASSWORD`, `CICMS_DOCKER_PASSWORD`).
 - SMB/CIFS share content required by containerized roles (for example `dfir-iris-custom.zip`).
 - `community.docker` Ansible collection installed on the control node.
 

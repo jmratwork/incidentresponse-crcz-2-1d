@@ -2,13 +2,13 @@
 - name: Validate CTI-SS sensitive secrets
   ansible.builtin.assert:
     that:
-      - cti_ss_taxii_siem_password | default('') | string | trim | length > 0
-      - (cti_ss_taxii_siem_password | default('') | string | trim | lower) != 'changeme'
-      - cti_ss_taxii_telemetry_password | default('') | string | trim | length > 0
-      - (cti_ss_taxii_telemetry_password | default('') | string | trim | lower) != 'changeme'
+      - cti_ss_taxii_siem_ingestor_password | default('') | string | trim | length > 0
+      - (cti_ss_taxii_siem_ingestor_password | default('') | string | trim | lower) != 'changeme'
+      - cti_ss_taxii_telemetry_feeder_password | default('') | string | trim | length > 0
+      - (cti_ss_taxii_telemetry_feeder_password | default('') | string | trim | lower) != 'changeme'
     fail_msg: >-
-      Debes inyectar secretos reales para `cti_ss_taxii_siem_password` y
-      `cti_ss_taxii_telemetry_password` usando Ansible Vault o
+      Debes inyectar secretos reales para `cti_ss_taxii_siem_ingestor_password` y
+      `cti_ss_taxii_telemetry_feeder_password` usando Ansible Vault o
       `lookup('env', ...)`.
     success_msg: Secretos de CTI-SS validados.
     quiet: true
@@ -105,19 +105,27 @@
     state: started
     enabled: true
 
-- name: Create mount point
-  ansible.builtin.file:
-    path: "{{ cti_ss_compose_source.mount_point }}"
-    state: directory
-    mode: "0775"
+- name: Stage optional CTI-SS artifacts from SMB share
+  when: cti_ss_compose_source.enabled | bool
+  block:
+    - name: Ensure CTI-SS SMB mount point exists
+      ansible.builtin.file:
+        path: "{{ cti_ss_compose_source.mount_point }}"
+        state: directory
+        mode: "0775"
 
-- name: Mount SMB Share (guest)
-  ansible.builtin.mount:
-    src: "{{ cti_ss_compose_source.share }}"
-    path: "{{ cti_ss_compose_source.mount_point }}"
-    fstype: cifs
-    opts: "{{ cti_ss_compose_source.mount_opts }}"
-    state: mounted
+    - name: Mount CTI-SS SMB share
+      ansible.builtin.mount:
+        src: "{{ cti_ss_compose_source.share }}"
+        path: "{{ cti_ss_compose_source.mount_point }}"
+        fstype: cifs
+        opts: "{{ cti_ss_compose_source.mount_opts }}"
+        state: mounted
+  always:
+    - name: Unmount CTI-SS SMB share
+      ansible.builtin.mount:
+        path: "{{ cti_ss_compose_source.mount_point }}"
+        state: unmounted
 
 - name: Create MISP directory for the git repo
   ansible.builtin.file:

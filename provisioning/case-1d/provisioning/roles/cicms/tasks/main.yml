@@ -101,7 +101,6 @@
     - cicms_nginx_binary.stat.exists | default(false)
 
 
-#Added tasks
 - name: Install Docker prerequisites
   ansible.builtin.apt:
     name:

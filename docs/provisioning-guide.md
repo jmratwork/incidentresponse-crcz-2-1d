@@ -82,7 +82,33 @@ cp /tmp/ng-soc-ansible/roles/ng-soar/tasks/docker-deploy.yml provisioning/roles/
 
 Both roles expose a `*_compose_source` structure that controls the SMB path (or an alternate source), whether the compose file is compressed, and the destination directory. Set `ng_siem_containerized` or `ng_soar_containerized` to `false` to skip the import entirely when you want to rely on pre-installed services instead of the Dockerised lab images.
 
-## 7. Injecting IP/port variables for external services
+
+## 7. Descomposición selectiva de `docker_server` del upstream en roles locales
+
+Este repositorio **no** incorpora un rol monolítico `docker_server`. En su lugar, toma sólo los fragmentos necesarios de `NG-SOC-eu/ng-soc-ansible` (`provisioning/roles/docker_server/tasks/main.yml`) y los reparte por componente de subcaso 1d.
+
+### Tabla de mapeo
+
+| Componente (`incidentresponse-crcz-2-1d`) | Fragmento relevante de `docker_server` upstream | Dónde vive/configura en este repo |
+|---|---|---|
+| `cti-ss` | Base Docker (prerrequisitos APT, repo, engine), despliegue MISP (`misp-docker`), generación/publicación de API key | `provisioning/case-1d/provisioning/roles/cti-ss/tasks/main.yml` + `defaults/main.yml` (`cti_ss_misp_*`, `cti_ss_registry`, `cti_ss_fact_delegate_host`). |
+| `cicms` (`cicms-operator`) | Base Docker, staging SMB/CIFS de `dfir-iris-custom.zip`, despliegue DFIR-IRIS, inyección `IRIS_MISP_URL`/`IRIS_MISP_VERIFY_CERT`/`IRIS_MISP_KEY` | `provisioning/case-1d/provisioning/roles/cicms/tasks/main.yml` + `defaults/main.yml` (`cicms_compose_source`, `cicms_dfir_*`, `cicms_misp_fact_source`). |
+| `ng-soar` | Despliegue containerizado NG-SOAR (Docker + SMB + `docker compose`) | `provisioning/case-1d/provisioning/roles/ng-soar/tasks/main.yml` (import) y `tasks/docker-deploy.yml` (snippet local sincronizable). |
+| `ng-siem` | Base Docker/SMB necesaria para despliegue containerizado del stack NG-SIEM (`docker compose`) | `provisioning/case-1d/provisioning/roles/ng-siem/tasks/main.yml` (import) y `tasks/docker-deploy.yml` (snippet local sincronizable). |
+| `ng-soc` | Sin correspondencia directa en `docker_server` para este subcaso | Rol propio del laboratorio: `provisioning/case-1d/provisioning/roles/ng-soc`. |
+| `playbook-library` | Sin correspondencia directa en `docker_server` para este subcaso | Rol propio del laboratorio: `provisioning/case-1d/provisioning/roles/playbook-library`. |
+| `telemetry-feeder` | Sin correspondencia directa en `docker_server` para este subcaso | Rol propio del laboratorio: `provisioning/case-1d/provisioning/roles/telemetry-feeder`. |
+
+### Exclusiones explícitas de alcance
+
+Aunque aparecen en el upstream `docker_server`, en este repositorio (subcaso 1d) quedan fuera de alcance:
+
+- Portainer.
+- RITA backend/frontend/tools.
+
+La referencia compartida de endpoints externos para NG-SIEM y NG-SOAR se mantiene en `provisioning/group_vars/ng_stack.yml` mediante `ng_external_services`, heredado por `ng_siem_external_services` y `ng_soar_external_services`.
+
+## 8. Injecting IP/port variables for external services
 
 NG-SIEM and NG-SOAR consume external services such as MISP, DFIR-IRIS and Cortex. Default endpoints now reside in `provisioning/group_vars/ng_stack.yml` so a single set of IP/port values can be shared across hosts. Override them per environment through `group_vars`, `host_vars` or the CLI, for example:
 
@@ -109,7 +135,7 @@ ng_external_services:
 
 The roles inherit these mappings via `ng_siem_external_services` and `ng_soar_external_services`, keeping playbook templates aligned with the integration endpoints used by the rest of the lab.
 
-## 8. Single-node vs. split-node deployments
+## 9. Single-node vs. split-node deployments
 
 You can choose between consolidating NG-SIEM and NG-SOAR on one VM or deploying them separately:
 
