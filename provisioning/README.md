@@ -81,6 +81,10 @@ The default variables live in `roles/<role>/defaults/main.yml` and cover ports, 
 
 Each `tasks/main.yml` applies the templates with idempotent modules (`ansible.builtin.template`, `ansible.builtin.copy`) and triggers handlers for controlled restarts. The final steps include command-line or `ansible.builtin.uri` validations with explicit `failed_when` clauses so any connectivity, syntax or service-status issue stops the deployment and provides immediate traceability.
 
+## About `provisioning/d`
+
+The former `provisioning/d` entry was an empty placeholder file (single newline) with no references in playbooks, scripts, or documentation. It is not part of the provisioning workflow and has been removed from version control to keep the repository clean.
+
 ## Synchronisation policy
 
 For Subcase 1d, the source of truth is `provisioning/case-1d/provisioning/roles/*`.
