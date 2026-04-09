@@ -25,6 +25,7 @@ cti_ss_enable_healthchecks: false
 
 # External compose source (SMB/CIFS share)
 cti_ss_compose_source:
+  enabled: false
   share: "//fileserver/cti-ss"
   mount_point: "/mnt/cti-ss"
   mount_opts: "guest,ro,vers=3.0"
