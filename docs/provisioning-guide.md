@@ -55,6 +55,14 @@ This playbook configures the NG ecosystem by installing packages, enabling servi
 - Optional TAXII credentials for CTI-SS users:
   - `CTI_SS_TAXII_SIEM_INGESTOR_PASSWORD`
   - `CTI_SS_TAXII_TELEMETRY_FEEDER_PASSWORD`
+- Canonical CTI-SS secret variable names consumed by roles:
+  - `cti_ss_taxii_siem_ingestor_password`
+  - `cti_ss_taxii_telemetry_feeder_password`
+  - `cti_ss_registry_username`
+  - `cti_ss_registry_password`
+
+Temporal backward compatibility is enabled in CTI-SS defaults: legacy variables `cti_ss_taxii_siem_password`, `cti_ss_taxii_telemetry_password`, and `cti_ss_docker_password` are still accepted as aliases, but they are **deprecated** and should be replaced by the canonical names above.
+
 - A reachable SMB/CIFS share containing DFIR-IRIS artifacts (`dfir-iris-custom.zip`) and any referenced compose bundles.
 - Network reachability between `cicms-operator` and `cti-ss` on the configured MISP URL/port (`cicms_iris_misp_url`).
 - MISP API key propagation expects `cti-ss` and `cicms-operator` to run in the same playbook execution unless Ansible fact caching is enabled.

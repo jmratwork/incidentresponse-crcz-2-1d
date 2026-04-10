@@ -63,15 +63,20 @@ The affected roles fail fast with `ansible.builtin.assert` if sensitive values a
 
 - `cti_ss_taxii_siem_ingestor_password`
 - `cti_ss_taxii_telemetry_feeder_password`
+- `cti_ss_registry_username` (optional, only for private registry login)
+- `cti_ss_registry_password` (required when `cti_ss_registry_username` is set)
 - `ng_siem_pipeline.sources[cti_taxii].password`
 - `ng_soar_integrations[siem_ingest].token`
 - `telemetry_feeder_agent.outputs[taxii].password`
 - `cicms_registry.password` (when `cicms_registry.username` is defined)
 
-Set them from Vault or environment lookups before execution (for example `lookup('env', 'CTI_SS_TAXII_SIEM_INGESTOR_PASSWORD')`, `lookup('env', 'CTI_SS_TAXII_TELEMETRY_FEEDER_PASSWORD')`, `lookup('env', 'NG_SIEM_TAXII_PASSWORD')`, `lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN')`, `lookup('env', 'TELEMETRY_FEEDER_TAXII_PASSWORD')`, `lookup('env', 'CICMS_DOCKER_PASSWORD')`).
+Set them from Vault or environment lookups before execution (for example `lookup('env', 'CTI_SS_TAXII_SIEM_INGESTOR_PASSWORD')`, `lookup('env', 'CTI_SS_TAXII_TELEMETRY_FEEDER_PASSWORD')`, `lookup('env', 'CTI_SS_REGISTRY_USERNAME')`, `lookup('env', 'CTI_SS_REGISTRY_PASSWORD')`, `lookup('env', 'NG_SIEM_TAXII_PASSWORD')`, `lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN')`, `lookup('env', 'TELEMETRY_FEEDER_TAXII_PASSWORD')`, `lookup('env', 'CICMS_DOCKER_PASSWORD')`).
+
+
+Temporal backward compatibility is enabled in CTI-SS defaults: legacy variables `cti_ss_taxii_siem_password`, `cti_ss_taxii_telemetry_password`, and `cti_ss_docker_password` are still accepted as aliases, but they are **deprecated** and should be replaced by the canonical names above.
 
 For subcase 1d provisioning, keep these external runtime dependencies available:
-- Docker Hub password variables (`CTI_SS_REGISTRY_PASSWORD`, `CICMS_DOCKER_PASSWORD`).
+- Docker Hub credential variables (`CTI_SS_REGISTRY_USERNAME`, `CTI_SS_REGISTRY_PASSWORD`, `CICMS_DOCKER_PASSWORD`).
 - SMB/CIFS share content required by containerized roles (for example `dfir-iris-custom.zip`).
 - `community.docker` Ansible collection installed on the control node.
 

@@ -1,6 +1,7 @@
 import json
 import subprocess
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -165,3 +166,38 @@ def test_roles_sync_allowlist_rejects_unknown_kind(tmp_path):
 
     with pytest.raises(ValueError, match="unsupported kind"):
         _load_allowlist(allowlist)
+
+
+CTI_SS_ACTIVE_ROLE_FILES = [
+    REPO_ROOT / "provisioning" / "roles" / "cti-ss" / "defaults" / "main.yml",
+    REPO_ROOT / "provisioning" / "roles" / "cti-ss" / "tasks" / "main.yml",
+    REPO_ROOT / "provisioning" / "case-1d" / "provisioning" / "roles" / "cti-ss" / "defaults" / "main.yml",
+    REPO_ROOT / "provisioning" / "case-1d" / "provisioning" / "roles" / "cti-ss" / "tasks" / "main.yml",
+]
+
+CTI_SS_DOC_FILES = [
+    REPO_ROOT / "README.md",
+    REPO_ROOT / "docs" / "provisioning-guide.md",
+    REPO_ROOT / "inventory.sample",
+]
+
+
+def _extract_cti_ss_variables(path: Path) -> set[str]:
+    content = path.read_text(encoding="utf-8")
+    return set(re.findall(r"\bcti_ss_[a-z0-9_]*(?:password|username)\b", content))
+
+
+def test_cti_ss_secret_names_are_consumed_by_active_roles():
+    consumed_by_roles = set()
+    for file_path in CTI_SS_ACTIVE_ROLE_FILES:
+        consumed_by_roles |= _extract_cti_ss_variables(file_path)
+
+    referenced_in_docs = set()
+    for file_path in CTI_SS_DOC_FILES:
+        referenced_in_docs |= _extract_cti_ss_variables(file_path)
+
+    undocumented_or_unknown = sorted(referenced_in_docs - consumed_by_roles)
+    assert not undocumented_or_unknown, (
+        "CTI-SS docs/inventory reference variables not consumed by active roles: "
+        f"{undocumented_or_unknown}"
+    )
