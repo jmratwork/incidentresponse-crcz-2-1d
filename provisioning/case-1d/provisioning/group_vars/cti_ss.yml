@@ -1,4 +1,5 @@
 ---
-# Sensitive credential for Docker Hub authentication used by the CTI sharing service role.
-# Replace the lookup with an encrypted secret or environment variable before running the playbook.
-cti_ss_docker_password: "{{ lookup('env', 'CTI_SS_DOCKER_PASSWORD') }}"
+# Canonical Docker registry secret names for CTI-SS.
+# Backward compatibility: cti_ss_docker_password and CTI_SS_DOCKER_PASSWORD are still accepted temporarily.
+cti_ss_registry_username: "{{ lookup('env', 'CTI_SS_REGISTRY_USERNAME') | default('', true) }}"
+cti_ss_registry_password: "{{ cti_ss_docker_password | default(lookup('env', 'CTI_SS_REGISTRY_PASSWORD') | default(lookup('env', 'CTI_SS_DOCKER_PASSWORD') | default('', true), true), true) }}"

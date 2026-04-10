@@ -1,8 +1,10 @@
 # NOTE: Secret injection is mandatory: store real credentials only in Ansible Vault or environment variables before running playbooks.
 # Example: export ANSIBLE_PASSWORD_NG_SOC and reference it as ansible_password="{{ lookup('env', 'ANSIBLE_PASSWORD_NG_SOC') }}"
 # Required role secrets (must not be empty or "changeme"). Use Vault or lookup('env', ...):
-#   cti_ss_taxii_siem_password: "{{ lookup('env', 'CTI_SS_TAXII_SIEM_PASSWORD') }}"
-#   cti_ss_taxii_telemetry_password: "{{ lookup('env', 'CTI_SS_TAXII_TELEMETRY_PASSWORD') }}"
+#   cti_ss_taxii_siem_ingestor_password: "{{ lookup('env', 'CTI_SS_TAXII_SIEM_INGESTOR_PASSWORD') }}"
+#   cti_ss_taxii_telemetry_feeder_password: "{{ lookup('env', 'CTI_SS_TAXII_TELEMETRY_FEEDER_PASSWORD') }}"
+#   cti_ss_registry_username: "{{ lookup('env', 'CTI_SS_REGISTRY_USERNAME') }}"
+#   cti_ss_registry_password: "{{ lookup('env', 'CTI_SS_REGISTRY_PASSWORD') }}"
 #   ng_siem_pipeline:
 #     sources:
 #       - name: cti_taxii

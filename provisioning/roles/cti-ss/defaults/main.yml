@@ -6,16 +6,25 @@ cti_ss_taxii_collections:
     description: Indicators collected during the REP exercise
     can_read: ["ng-siem", "ng-soar"]
     can_write: ["telemetry-feeder"]
+
+# Canonical CTI-SS secret names.
+# Temporary backward-compatible aliases:
+# - cti_ss_taxii_siem_password
+# - cti_ss_taxii_telemetry_password
+cti_ss_taxii_siem_ingestor_password: "{{ cti_ss_taxii_siem_password | default(lookup('env', 'CTI_SS_TAXII_SIEM_INGESTOR_PASSWORD') | default(lookup('env', 'CTI_SS_TAXII_SIEM_PASSWORD') | default('', true), true), true) }}"
+cti_ss_taxii_telemetry_feeder_password: "{{ cti_ss_taxii_telemetry_password | default(lookup('env', 'CTI_SS_TAXII_TELEMETRY_FEEDER_PASSWORD') | default(lookup('env', 'CTI_SS_TAXII_TELEMETRY_PASSWORD') | default('', true), true), true) }}"
+cti_ss_taxii_siem_password: "{{ cti_ss_taxii_siem_ingestor_password }}"
+cti_ss_taxii_telemetry_password: "{{ cti_ss_taxii_telemetry_feeder_password }}"
+
 cti_ss_auth:
   users:
     - username: siem-ingestor
-      password: "{{ cti_ss_taxii_siem_password }}"
+      password: "{{ cti_ss_taxii_siem_ingestor_password }}"
       permissions: ["rep-threats:read"]
     - username: telemetry-feeder
-      password: "{{ cti_ss_taxii_telemetry_password }}"
+      password: "{{ cti_ss_taxii_telemetry_feeder_password }}"
       permissions: ["rep-threats:write"]
-cti_ss_taxii_siem_password: "{{ lookup('env', 'CTI_SS_TAXII_SIEM_PASSWORD') | default('', true) }}"
-cti_ss_taxii_telemetry_password: "{{ lookup('env', 'CTI_SS_TAXII_TELEMETRY_PASSWORD') | default('', true) }}"
+
 cti_ss_bind_host: 0.0.0.0
 cti_ss_bind_port: 9000
 cti_ss_healthcheck_command: "/usr/bin/cti-ssctl status"
@@ -25,9 +34,17 @@ cti_ssctl_binary_path: /usr/bin/cti-ssctl
 cti_ss_docker_apt_gpg_url: https://download.docker.com/linux/ubuntu/gpg
 cti_ss_docker_apt_repo: "deb [arch={{ (ansible_architecture | default('amd64')) | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
 
+# Canonical registry credentials. Backward compatibility:
+# - cti_ss_docker_password
+# - CTI_SS_DOCKER_PASSWORD
+cti_ss_registry_url: https://index.docker.io/v1/
+cti_ss_registry_username: "{{ lookup('env', 'CTI_SS_REGISTRY_USERNAME') | default('', true) }}"
+cti_ss_registry_password: "{{ cti_ss_docker_password | default(lookup('env', 'CTI_SS_REGISTRY_PASSWORD') | default(lookup('env', 'CTI_SS_DOCKER_PASSWORD') | default('', true), true), true) }}"
+cti_ss_docker_password: "{{ cti_ss_registry_password }}"
 cti_ss_registry:
-  url: https://index.docker.io/v1/
-  username: ""
+  url: "{{ cti_ss_registry_url }}"
+  username: "{{ cti_ss_registry_username }}"
+  password: "{{ cti_ss_registry_password }}"
 
 cti_ss_misp_repo: "https://github.com/MISP/misp-docker.git"
 cti_ss_misp_repo_version: main

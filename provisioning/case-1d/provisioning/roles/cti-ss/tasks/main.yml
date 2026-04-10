@@ -135,12 +135,12 @@
 
 - name: Login to Docker registry
   community.docker.docker_login:
-    registry_url: "{{ cti_ss_registry.url }}"
-    username: "{{ cti_ss_registry.username }}"
-    password: "{{ cti_ss_registry.password }}"
+    registry_url: "{{ cti_ss_registry_url }}"
+    username: "{{ cti_ss_registry_username }}"
+    password: "{{ cti_ss_registry_password }}"
   when:
-    - cti_ss_registry.username | default('') | trim | length > 0
-    - cti_ss_registry.password | default('') | trim | length > 0
+    - cti_ss_registry_username | default('') | trim | length > 0
+    - cti_ss_registry_password | default('') | trim | length > 0
   no_log: true
 
 - name: Download MISP docker
