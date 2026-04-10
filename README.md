@@ -53,6 +53,8 @@ The tests verify that:
 - `training_linear.json` follows the expected layout, with sequential steps and non-empty metadata for each activity.
 - `topology.yml` and the provisioning topologies only include KYPO sandbox fields and consistent host/network mappings.
 - The KYPO topologies in `provisioning/` reference valid hosts, routers and networks in their mapping sections.
+- `inventory.sample` is automatically checked against `topology.yml` for required host groups, host names and `ansible_host` IPs to prevent inventory/topology drift.
+- `topology.yml` is automatically checked against `provisioning/case-1d/topology.yml` so host/IP mappings stay coherent across both topology descriptors.
 - The Jinja role templates under `provisioning/roles` and `provisioning/case-1d/provisioning/roles` render correctly, including quoting edge cases in TAXII configuration fields.
 
 ## Credential management
