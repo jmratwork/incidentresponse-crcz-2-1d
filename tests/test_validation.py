@@ -132,13 +132,17 @@ def test_kypo_topologies(topology_path):
 
 def test_roles_sync_policy_check():
     result = subprocess.run(
-        ["python", str(ROLES_SYNC_SCRIPT)],
+        [sys.executable, str(ROLES_SYNC_SCRIPT)],
         cwd=REPO_ROOT,
         capture_output=True,
         text=True,
         check=False,
     )
-    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.returncode == 0, (
+        "check_roles_sync.py exited with a non-zero status.\n"
+        f"stdout:\n{result.stdout}\n"
+        f"stderr:\n{result.stderr}"
+    )
 
 
 def test_roles_sync_allowlist_requires_reason(tmp_path):
