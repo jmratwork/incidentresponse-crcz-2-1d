@@ -4,6 +4,7 @@ import importlib.util
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -186,6 +187,75 @@ CTI_SS_DOC_FILES = [
 ]
 
 
+REQUIRED_INVENTORY_GROUPS = {
+    "ng-soc",
+    "ng-siem",
+    "ng-soar",
+    "cti-ss",
+    "cicms-operator",
+    "playbook-library",
+    "telemetry-feeder",
+}
+
+
+def _load_yaml(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def _host_ips_from_topology(path: Path) -> dict[str, str]:
+    data = _load_yaml(path)
+    ips: dict[str, str] = {}
+    for mapping in data.get("net_mappings", []):
+        host = mapping.get("host")
+        ip = mapping.get("ip")
+        if host in ips:
+            raise AssertionError(
+                f"{path} has duplicate net_mappings for host '{host}' "
+                f"(IPs: '{ips[host]}' and '{ip}')"
+            )
+        ips[host] = ip
+    return ips
+
+
+def _parse_inventory_ini(path: Path) -> tuple[set[str], dict[str, str]]:
+    groups: set[str] = set()
+    host_ips: dict[str, str] = {}
+    current_group: str | None = None
+
+    for lineno, raw_line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            current_group = line[1:-1].strip()
+            groups.add(current_group)
+            continue
+        if current_group is None:
+            continue
+
+        tokens = line.split()
+        hostname = tokens[0]
+        ansible_host = None
+        for token in tokens[1:]:
+            if token.startswith("ansible_host="):
+                ansible_host = token.split("=", 1)[1]
+                break
+
+        assert ansible_host, (
+            f"{path.name}:{lineno} missing ansible_host for host '{hostname}' "
+            f"in group '{current_group}'"
+        )
+        if hostname in host_ips:
+            raise AssertionError(
+                f"{path.name}:{lineno} duplicate host '{hostname}' "
+                f"(previous IP '{host_ips[hostname]}', new IP '{ansible_host}')"
+            )
+        host_ips[hostname] = ansible_host
+
+    return groups, host_ips
+
+
 def _extract_cti_ss_variables(path: Path) -> set[str]:
     content = path.read_text(encoding="utf-8")
     return set(re.findall(r"\bcti_ss_[a-z0-9_]*(?:password|username)\b", content))
@@ -204,4 +274,69 @@ def test_cti_ss_secret_names_are_consumed_by_active_roles():
     assert not undocumented_or_unknown, (
         "CTI-SS docs/inventory reference variables not consumed by active roles: "
         f"{undocumented_or_unknown}"
+    )
+
+
+def test_inventory_sample_matches_topology_net_mappings():
+    inventory_path = REPO_ROOT / "inventory.sample"
+    topology_path = REPO_ROOT / "topology.yml"
+    groups, inventory_host_ips = _parse_inventory_ini(inventory_path)
+    topology_host_ips = _host_ips_from_topology(topology_path)
+
+    missing_groups = sorted(REQUIRED_INVENTORY_GROUPS - groups)
+    assert not missing_groups, (
+        f"{inventory_path.name} missing required groups: {missing_groups}"
+    )
+
+    extra_inventory_hosts = sorted(set(inventory_host_ips) - set(topology_host_ips))
+    missing_inventory_hosts = sorted(set(topology_host_ips) - set(inventory_host_ips))
+    assert not extra_inventory_hosts, (
+        f"{inventory_path.name} contains hosts not present in {topology_path.name}: "
+        f"{extra_inventory_hosts}"
+    )
+    assert not missing_inventory_hosts, (
+        f"{inventory_path.name} is missing hosts present in {topology_path.name}: "
+        f"{missing_inventory_hosts}"
+    )
+
+    mismatched_ips = []
+    for host, topology_ip in sorted(topology_host_ips.items()):
+        inventory_ip = inventory_host_ips.get(host)
+        if inventory_ip != topology_ip:
+            mismatched_ips.append(
+                f"host '{host}': inventory ansible_host='{inventory_ip}' "
+                f"!= topology net_mappings ip='{topology_ip}'"
+            )
+    assert not mismatched_ips, (
+        f"IP drift between {inventory_path.name} and {topology_path.name}: "
+        f"{'; '.join(mismatched_ips)}"
+    )
+
+
+def test_topology_yml_matches_case_1d_topology():
+    primary_path = REPO_ROOT / "topology.yml"
+    case_path = REPO_ROOT / "provisioning" / "case-1d" / "topology.yml"
+    primary_host_ips = _host_ips_from_topology(primary_path)
+    case_host_ips = _host_ips_from_topology(case_path)
+
+    missing_in_case = sorted(set(primary_host_ips) - set(case_host_ips))
+    missing_in_primary = sorted(set(case_host_ips) - set(primary_host_ips))
+    assert not missing_in_case, (
+        f"{case_path} missing hosts present in {primary_path}: {missing_in_case}"
+    )
+    assert not missing_in_primary, (
+        f"{primary_path} missing hosts present in {case_path}: {missing_in_primary}"
+    )
+
+    mismatched_ips = []
+    for host, primary_ip in sorted(primary_host_ips.items()):
+        case_ip = case_host_ips.get(host)
+        if case_ip != primary_ip:
+            mismatched_ips.append(
+                f"host '{host}': {primary_path.name} ip='{primary_ip}' "
+                f"!= {case_path.name} ip='{case_ip}'"
+            )
+    assert not mismatched_ips, (
+        f"Topology IP drift detected between {primary_path} and {case_path}: "
+        f"{'; '.join(mismatched_ips)}"
     )
