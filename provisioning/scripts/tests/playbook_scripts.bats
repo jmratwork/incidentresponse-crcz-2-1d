@@ -2,6 +2,7 @@
 
 setup() {
   export BATS_TMPDIR="$BATS_TEST_TMPDIR"
+  export PYTHON_BIN="${PYTHON_BIN:-python3}"
   mkdir -p "$BATS_TMPDIR/bin"
   PATH="$BATS_TMPDIR/bin:$PATH"
   export PATH
@@ -58,14 +59,14 @@ if [[ "$1" != "-r" ]]; then
 fi
 case "$2" in
   '.token')
-    python - "$@" <<'PY'
+    "$PYTHON_BIN" - "$@" <<'PY'
 import json,sys
 print(json.load(sys.stdin)['token'])
 PY
     ;;
   '.version')
     shift 2
-    python - "$@" <<'PY'
+    "$PYTHON_BIN" - "$@" <<'PY'
 import json,sys
 from pathlib import Path
 path = Path(sys.argv[1])
