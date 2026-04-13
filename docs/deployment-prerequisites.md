@@ -8,7 +8,7 @@
 ## What KYPO/CRCZ must provide
 - Valid account with sandbox creation/import permissions.
 - Ability to import at least one topology profile:
-  - `provisioning/case-1d/topology.yml` (low-footprint, recommended for constrained pools),
+  - `provisioning/case-1d/topology.yml` (low-footprint `standard.tiny`, recomendado para pools con cuota reducida),
   - or `provisioning/case-1d/topology.full.yml` (full profile).
 - Reachable VMs for all hosts in subcase 1d.
 

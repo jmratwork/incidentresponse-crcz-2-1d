@@ -4,43 +4,43 @@ hosts:
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
-    flavor: standard.small
+    flavor: standard.tiny
   - name: ng-siem
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
-    flavor: standard.small
+    flavor: standard.tiny
   - name: ng-soar
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
-    flavor: standard.small
+    flavor: standard.tiny
   - name: cti-ss
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
-    flavor: standard.small
+    flavor: standard.tiny
   - name: cicms-operator
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
-    flavor: standard.small
+    flavor: standard.tiny
   - name: playbook-library
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
-    flavor: standard.small
+    flavor: standard.tiny
   - name: telemetry-feeder
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
-    flavor: standard.small
+    flavor: standard.tiny
 routers:
   - name: ng-ops-gateway
     base_box:
       image: debian-12-x86_64
       mgmt_user: debian
-    flavor: standard.small
+    flavor: standard.tiny
 networks:
   - name: soc-operations
     cidr: 10.30.10.0/24

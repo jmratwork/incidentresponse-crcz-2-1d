@@ -13,7 +13,7 @@ source .venv/bin/activate
 
 ## 3) Importar topología en KYPO/CRCZ (manual)
 1. En el portal KYPO/CRCZ, importa uno de estos perfiles:
-   - **Recomendado (pool pequeño / cuota reducida):** `provisioning/case-1d/topology.yml`
+   - **Recomendado (pool pequeño / cuota reducida):** `provisioning/case-1d/topology.yml` (perfil `standard.tiny`)
    - **Completo (pool amplio):** `provisioning/case-1d/topology.full.yml`
 2. Crea sandbox y espera estado operativo.
 3. Verifica acceso a VMs (SSH/WinRM).
