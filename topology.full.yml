@@ -4,7 +4,7 @@ hosts:
     base_box:
       image: ubuntu-noble-x86_64
       mgmt_user: ubuntu
-    flavor: standard.small
+    flavor: standard.medium
   - name: ng-siem
     base_box:
       image: ubuntu-noble-x86_64

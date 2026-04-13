@@ -7,7 +7,9 @@
 
 ## What KYPO/CRCZ must provide
 - Valid account with sandbox creation/import permissions.
-- Ability to import `provisioning/case-1d/topology.yml`.
+- Ability to import at least one topology profile:
+  - `provisioning/case-1d/topology.yml` (low-footprint, recommended for constrained pools),
+  - or `provisioning/case-1d/topology.full.yml` (full profile).
 - Reachable VMs for all hosts in subcase 1d.
 
 ## Manual operator actions (cannot be automated from this repo)
@@ -26,6 +28,12 @@ Then run local preflight:
 
 ```bash
 ./scripts/preflight.sh
+```
+
+If using the full profile, run preflight against that topology:
+
+```bash
+TOPOLOGY_FILE=provisioning/case-1d/topology.full.yml ./scripts/preflight.sh
 ```
 
 If portal automation is unavailable in your deployment, treat topology import and sandbox start as a strict manual prerequisite.

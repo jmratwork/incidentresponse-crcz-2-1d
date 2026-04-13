@@ -6,7 +6,9 @@ import sys
 import yaml
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-TOPOLOGY = os.path.join(ROOT, "provisioning", "case-1d", "topology.yml")
+TOPOLOGY = os.path.join(
+    ROOT, os.getenv("TOPOLOGY_FILE", os.path.join("provisioning", "case-1d", "topology.yml"))
+)
 
 EXPECTED_HOSTS = {"ng-soc", "ng-siem", "ng-soar", "cti-ss", "cicms-operator", "playbook-library", "telemetry-feeder"}
 EXPECTED_NETWORKS = {"soc-operations", "automation-zone", "intelligence-zone", "coordination-zone", "telemetry-zone"}
@@ -53,13 +55,19 @@ def main() -> int:
     mappings = {m.get("host") for m in data.get("net_mappings", [])}
 
     if hosts != EXPECTED_HOSTS:
-        err(f"Hosts inválidos en topology.yml. Esperados={sorted(EXPECTED_HOSTS)} actuales={sorted(hosts)}")
+        err(
+            "Hosts inválidos en topology.yml. "
+            f"Esperados={sorted(EXPECTED_HOSTS)} actuales={sorted(hosts)}"
+        )
         failed = True
     else:
         ok("Topología contiene todos los hosts esperados")
 
     if networks != EXPECTED_NETWORKS:
-        err(f"Redes inválidas en topology.yml. Esperadas={sorted(EXPECTED_NETWORKS)} actuales={sorted(networks)}")
+        err(
+            "Redes inválidas en topology.yml. "
+            f"Esperadas={sorted(EXPECTED_NETWORKS)} actuales={sorted(networks)}"
+        )
         failed = True
     else:
         ok("Topología contiene todas las redes esperadas")
