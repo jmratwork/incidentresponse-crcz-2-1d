@@ -1,0 +1,41 @@
+---
+- name: Control-node preflight checks
+  hosts: localhost
+  gather_facts: false
+  vars:
+    required_install_modes:
+      - preinstalled
+      - package
+      - container
+      - artifact
+  tasks:
+    - name: Validate install mode values
+      ansible.builtin.assert:
+        that:
+          - ng_soc_install_mode in required_install_modes
+          - ng_siem_install_mode in required_install_modes
+          - ng_soar_install_mode in required_install_modes
+          - cti_ss_install_mode in required_install_modes
+          - cicms_install_mode in required_install_modes
+          - playbook_library_install_mode in required_install_modes
+          - telemetry_feeder_install_mode in required_install_modes
+        fail_msg: "Invalid *_install_mode. Allowed: preinstalled|package|container|artifact"
+
+    - name: Validate mandatory secrets via environment or vars
+      ansible.builtin.assert:
+        that:
+          - (lookup('env', 'CTI_SS_TAXII_SIEM_INGESTOR_PASSWORD') | default('', true) | trim | length) > 0 or (cti_ss_taxii_siem_ingestor_password | default('', true) | trim | length) > 0
+          - (lookup('env', 'CTI_SS_TAXII_TELEMETRY_FEEDER_PASSWORD') | default('', true) | trim | length) > 0 or (cti_ss_taxii_telemetry_feeder_password | default('', true) | trim | length) > 0
+          - (lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN') | default('', true) | trim | length) > 0
+        fail_msg: "Missing required secrets for CTI-SS/NG-SOAR. Load vault vars or export environment variables."
+
+- name: Integration connectivity preflight
+  hosts: cicms-operator
+  gather_facts: false
+  tasks:
+    - name: Check reachability from CICMS to CTI-SS MISP endpoint
+      ansible.builtin.wait_for:
+        host: "{{ hostvars[groups['cti-ss'][0]].ansible_host | default(groups['cti-ss'][0]) }}"
+        port: "{{ cicms_iris_misp_url | regex_search(':(\\d+)$', '\\1') | default('8443', true) | int }}"
+        timeout: 5
+      changed_when: false

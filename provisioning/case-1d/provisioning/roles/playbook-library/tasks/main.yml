@@ -1,4 +1,9 @@
 ---
+- name: Validate playbook-library install mode
+  ansible.builtin.assert:
+    that:
+      - playbook_library_install_mode in ['preinstalled', 'package', 'container', 'artifact']
+
 - name: Check for cacaoctl binary
   ansible.builtin.stat:
     path: "{{ (playbook_library_healthcheck_command | split) | first }}"

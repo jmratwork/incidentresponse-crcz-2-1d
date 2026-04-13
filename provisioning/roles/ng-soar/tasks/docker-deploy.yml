@@ -1,11 +1,6 @@
 - name: Install Docker and SMB prerequisites for NG-SOAR
   ansible.builtin.apt:
-    name:
-      - ca-certificates
-      - curl
-      - cifs-utils
-      - smbclient
-      - unzip
+    name: [ca-certificates, curl, cifs-utils, smbclient, unzip]
     state: present
     update_cache: true
 
@@ -17,25 +12,20 @@
 
 - name: Download Docker GPG key
   ansible.builtin.get_url:
-    url: "{{ ng_soar_docker_apt_gpg_url }}"
+    url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/keyrings/docker.asc
     mode: "0644"
 
 - name: Add Docker APT repository
   ansible.builtin.apt_repository:
-    repo: "{{ ng_soar_docker_apt_repo }}"
+    repo: "deb [arch={{ (ansible_architecture | default('amd64')) | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
     state: present
     filename: docker
     update_cache: true
 
 - name: Install Docker engine packages
   ansible.builtin.apt:
-    name:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-buildx-plugin
-      - docker-compose-plugin
+    name: [docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin]
     state: present
     update_cache: true
 
@@ -45,14 +35,43 @@
     state: started
     enabled: true
 
-- name: Prepare NG-SOAR compose bundle
+- name: Ensure NG-SOAR compose destination exists
+  ansible.builtin.file:
+    path: "{{ ng_soar_compose_source.destination_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Check NG-SOAR local compose artifact
+  ansible.builtin.stat:
+    path: "{{ ng_soar_compose_local_path }}"
+  register: ng_soar_local_compose
+
+- name: Copy NG-SOAR compose from local artifact path
+  ansible.builtin.copy:
+    src: "{{ ng_soar_compose_local_path }}"
+    dest: "{{ ng_soar_compose_source.destination_dir }}/docker-compose.yml"
+    mode: "0644"
+  when: ng_soar_local_compose.stat.exists
+
+- name: Download NG-SOAR compose from URL fallback
+  ansible.builtin.get_url:
+    url: "{{ ng_soar_compose_url }}"
+    dest: "{{ ng_soar_compose_source.destination_dir }}/docker-compose.yml"
+    mode: "0644"
+  when:
+    - not ng_soar_local_compose.stat.exists
+    - ng_soar_compose_url | trim | length > 0
+
+- name: Prepare NG-SOAR compose bundle from SMB fallback
+  when:
+    - not ng_soar_local_compose.stat.exists
+    - ng_soar_compose_url | trim | length == 0
   block:
     - name: Ensure NG-SOAR mount point exists
       ansible.builtin.file:
         path: "{{ ng_soar_compose_source.mount_point }}"
         state: directory
         mode: "0775"
-
     - name: Mount SMB share with NG-SOAR artifacts
       ansible.posix.mount:
         src: "{{ ng_soar_compose_source.share }}"
@@ -60,34 +79,30 @@
         fstype: cifs
         opts: "{{ ng_soar_compose_source.mount_opts }}"
         state: mounted
-      when: ng_soar_compose_source.type == 'smb'
-
-    - name: Ensure NG-SOAR compose destination exists
-      ansible.builtin.file:
-        path: "{{ ng_soar_compose_source.destination_dir }}"
-        state: directory
-        mode: "0755"
-
-    - name: Copy NG-SOAR compose archive from share
-      ansible.builtin.unarchive:
-        src: "{{ ng_soar_compose_source.archive_path }}"
-        dest: "{{ ng_soar_compose_source.destination_dir }}"
-        remote_src: true
-      when: ng_soar_compose_source.archive | bool
-
-    - name: Copy NG-SOAR compose file from share
+    - name: Copy NG-SOAR compose file from SMB
       ansible.builtin.copy:
         src: "{{ ng_soar_compose_source.compose_path }}"
         dest: "{{ ng_soar_compose_source.destination_dir }}/docker-compose.yml"
         remote_src: true
         mode: "0644"
-      when: not ng_soar_compose_source.archive | bool
   always:
     - name: Unmount NG-SOAR SMB share
       ansible.posix.mount:
         path: "{{ ng_soar_compose_source.mount_point }}"
         state: unmounted
-      when: ng_soar_compose_source.type == 'smb'
+
+- name: Assert NG-SOAR compose file was resolved
+  ansible.builtin.stat:
+    path: "{{ ng_soar_compose_source.destination_dir }}/docker-compose.yml"
+  register: ng_soar_compose_final
+
+- name: Fail if NG-SOAR compose file is still missing
+  ansible.builtin.assert:
+    that:
+      - ng_soar_compose_final.stat.exists
+    fail_msg: >-
+      No se pudo resolver docker-compose.yml para NG-SOAR.
+      Intentado (orden): local={{ ng_soar_compose_local_path }}, url={{ ng_soar_compose_url | default('') }}, smb={{ ng_soar_compose_source.compose_path }}.
 
 - name: Authenticate to container registry for NG-SOAR
   community.docker.docker_login:
@@ -102,7 +117,3 @@
     state: present
     build: "{{ 'always' if ng_soar_compose_build | bool else 'never' }}"
   register: ng_soar_compose_result
-
-- name: Show NG-SOAR compose output
-  ansible.builtin.debug:
-    var: ng_soar_compose_result

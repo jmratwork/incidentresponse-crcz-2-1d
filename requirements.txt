@@ -1,0 +1,4 @@
+ansible-core>=2.15,<2.18
+pywinrm[credssp]>=0.4.3,<0.6
+PyYAML>=6.0,<7.0
+jmespath>=1.0.1,<2.0

@@ -4,45 +4,12 @@
 #
 # Keep this file minimal: each exception must be intentional and reviewed.
 allowed_drift:
-  - path: cicms/defaults/main.yml
-    kinds: [content]
-    reason: "Legacy compatibility defaults in mirror."
-  - path: cicms/tasks/main.yml
-    kinds: [content]
-    reason: "Mirror keeps compatibility workflow for older labs."
-  - path: cti-ss/defaults/main.yml
-    kinds: [content]
-    reason: "Mirror preserves legacy variable names."
-  - path: cti-ss/tasks/main.yml
-    kinds: [content]
-    reason: "Mirror retains compatibility commands."
   - path: ng-siem/README.md
     kinds: [missing_in_canonical]
     reason: "Extra mirror-only documentation."
-  - path: ng-siem/defaults/main.yml
-    kinds: [content]
-    reason: "Mirror defaults aligned to backwards-compatible setup."
-  - path: ng-siem/tasks/main.yml
-    kinds: [content]
-    reason: "Mirror task flow includes compatibility adjustments."
-  - path: ng-soar/defaults/main.yml
-    kinds: [content]
-    reason: "Mirror keeps legacy defaults consumed by old inventories."
-  - path: ng-soar/tasks/docker-deploy.yml
-    kinds: [content]
-    reason: "Mirror has compatibility docker deploy steps."
-  - path: ng-soar/tasks/main.yml
-    kinds: [content]
-    reason: "Mirror task ordering differs for compatibility mode."
   - path: ng-soc/handlers/main.yml
     kinds: [content]
     reason: "Mirror restart handler differs for older service naming."
-  - path: ng-soc/tasks/main.yml
-    kinds: [content]
-    reason: "Mirror includes compatibility conditionals."
   - path: playbook-library/handlers/main.yml
     kinds: [content]
     reason: "Mirror handler keeps compatibility restart strategy."
-  - path: playbook-library/tasks/main.yml
-    kinds: [content]
-    reason: "Mirror task definitions support legacy runtime."

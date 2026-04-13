@@ -1,0 +1,14 @@
+---
+ng_external_services:
+  misp:
+    host: 10.30.30.10
+    port: 8443
+    api_base: https://cti-ss.internal
+  dfir_iris:
+    host: 10.30.40.10
+    port: 8443
+    api_base: https://cicms-operator.internal
+  cortex:
+    host: 10.30.20.10
+    port: 9001
+    api_base: http://ng-soar.internal:9001

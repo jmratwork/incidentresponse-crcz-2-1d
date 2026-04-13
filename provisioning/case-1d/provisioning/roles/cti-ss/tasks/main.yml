@@ -1,4 +1,10 @@
 ---
+- name: Validate cti-ss install mode
+  ansible.builtin.assert:
+    that:
+      - cti_ss_install_mode in ['preinstalled', 'package', 'container', 'artifact']
+    fail_msg: "cti_ss_install_mode={{ cti_ss_install_mode }} inválido."
+
 - name: Validate CTI-SS sensitive secrets
   ansible.builtin.assert:
     that:

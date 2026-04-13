@@ -1,4 +1,5 @@
 ---
+cti_ss_install_mode: container
 cti_ss_taxii_config: /etc/cti-ss/taxii.yaml
 cti_ss_taxii_collections:
   - id: rep-threats
@@ -15,7 +16,6 @@ cti_ss_taxii_siem_ingestor_password: "{{ cti_ss_taxii_siem_password | default(lo
 cti_ss_taxii_telemetry_feeder_password: "{{ cti_ss_taxii_telemetry_password | default(lookup('env', 'CTI_SS_TAXII_TELEMETRY_FEEDER_PASSWORD') | default(lookup('env', 'CTI_SS_TAXII_TELEMETRY_PASSWORD') | default('', true), true), true) }}"
 cti_ss_taxii_siem_password: "{{ cti_ss_taxii_siem_ingestor_password }}"
 cti_ss_taxii_telemetry_password: "{{ cti_ss_taxii_telemetry_feeder_password }}"
-
 cti_ss_auth:
   users:
     - username: siem-ingestor
@@ -29,15 +29,18 @@ cti_ss_bind_host: 0.0.0.0
 cti_ss_bind_port: 9000
 cti_ss_healthcheck_command: "/usr/bin/cti-ssctl status"
 cti_ss_enable_healthchecks: false
-cti_ssctl_binary_path: /usr/bin/cti-ssctl
 
-cti_ss_docker_apt_gpg_url: https://download.docker.com/linux/ubuntu/gpg
-cti_ss_docker_apt_repo: "deb [arch={{ (ansible_architecture | default('amd64')) | replace('x86_64', 'amd64') }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+# External compose source (SMB/CIFS share)
+cti_ss_compose_source:
+  enabled: false
+  share: "//fileserver/cti-ss"
+  mount_point: "/mnt/cti-ss"
+  mount_opts: "guest,ro,vers=3.0"
 
 # Canonical registry credentials. Backward compatibility:
 # - cti_ss_docker_password
 # - CTI_SS_DOCKER_PASSWORD
-cti_ss_registry_url: https://index.docker.io/v1/
+cti_ss_registry_url: "https://index.docker.io/v1/"
 cti_ss_registry_username: "{{ lookup('env', 'CTI_SS_REGISTRY_USERNAME') | default('', true) }}"
 cti_ss_registry_password: "{{ cti_ss_docker_password | default(lookup('env', 'CTI_SS_REGISTRY_PASSWORD') | default(lookup('env', 'CTI_SS_DOCKER_PASSWORD') | default('', true), true), true) }}"
 cti_ss_docker_password: "{{ cti_ss_registry_password }}"
@@ -46,17 +49,20 @@ cti_ss_registry:
   username: "{{ cti_ss_registry_username }}"
   password: "{{ cti_ss_registry_password }}"
 
+# Docker apt repository settings
+cti_ss_docker_repo_url: "https://download.docker.com/linux/ubuntu"
+cti_ss_docker_apt_repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] {{ cti_ss_docker_repo_url }} {{ ansible_distribution_release }} stable"
+
+# MISP deployment settings
 cti_ss_misp_repo: "https://github.com/MISP/misp-docker.git"
-cti_ss_misp_repo_version: main
-cti_ss_misp_project_dir: /opt/misp-docker
-cti_ss_misp_env_template: "{{ cti_ss_misp_project_dir }}/template.env"
-cti_ss_misp_env_file: "{{ cti_ss_misp_project_dir }}/.env"
-cti_ss_misp_http_port: 8082
-cti_ss_misp_https_port: 8443
-cti_ss_misp_base_url: "https://10.30.30.10:8443"
-cti_ss_misp_admin_user: admin@admin.test
-cti_ss_misp_core_container: misp-docker-misp-core-1
-cti_ss_misp_api_key_share_host: localhost
-cti_ss_misp_api_key_regex: "([a-fA-F0-9]{40})"
-cti_ss_misp_wait_retries: 20
-cti_ss_misp_wait_delay: 10
+cti_ss_misp_repo_version: "main"
+cti_ss_misp_project_dir: "/opt/misp-docker"
+cti_ss_misp_url: "https://localhost"
+cti_ss_misp_http_port: "80"
+cti_ss_misp_https_port: "443"
+cti_ss_misp_container_core_name: "misp-core"
+cti_ss_misp_admin_user: "admin@admin.test"
+cti_ss_misp_api_key_regex: "(?i)new key created:\\s*([A-Za-z0-9]{40})"
+
+# Cross-role fact sharing settings
+cti_ss_fact_delegate_host: "localhost"

@@ -1,4 +1,6 @@
 ---
+ng_siem_install_mode: container
+ng_siemctl_path: /usr/bin/ng-siemctl
 ng_siem_pipeline_config: /etc/ng-siem/pipelines.d/rep.conf
 ng_siem_pipeline:
   name: rep_ingest
@@ -11,7 +13,7 @@ ng_siem_pipeline:
       url: https://cti-ss.internal/taxii/
       collection: rep-threats
       username: siem-ingestor
-      password: changeme
+      password: "{{ lookup('env', 'NG_SIEM_TAXII_PASSWORD') | default('changeme', true) }}"
   enrichments:
     - type: geoip
       database: /usr/share/GeoIP/GeoLite2-City.mmdb
@@ -23,9 +25,7 @@ ng_siem_pipeline:
         - https://es-gateway.internal:9200
       index: rep-alerts-{{ '%Y.%m.%d' | strftime }}
 ng_siem_healthcheck:
-  command: "/usr/bin/ng-siemctl pipeline status rep_ingest"
-
-ng_siem_containerized: true
+  command: "{{ ng_siemctl_path }} pipeline status {{ ng_siem_pipeline.name }}"
 
 ng_siem_compose_source:
   type: smb
@@ -37,28 +37,10 @@ ng_siem_compose_source:
   archive: false
   destination_dir: /opt/ng-siem
 
-ng_siem_compose_fallback:
-  enabled: false
-  type: file  # file|url
-  path: "{{ playbook_dir }}/roles/ng-siem/files/docker-compose.yml"
-  url: ""
-  mode: "0644"
+ng_siem_compose_local_path: "{{ playbook_dir }}/../../../../artifacts/ng-siem/docker-compose.yml"
+ng_siem_compose_url: ""
 
 ng_siem_registry:
   url: https://index.docker.io/v1/
   username: ""
   password: ""
-
-ng_siem_external_services:
-  misp:
-    host: 10.250.10.50
-    port: 443
-    api_base: https://misp.internal
-  dfir_iris:
-    host: 10.250.10.60
-    port: 443
-    api_base: https://dfir-iris.internal
-  cortex:
-    host: 10.250.10.70
-    port: 9001
-    api_base: http://cortex.internal:9001

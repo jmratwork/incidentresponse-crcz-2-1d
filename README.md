@@ -34,7 +34,7 @@ See Figure 6 for the segment of the CYNET activity diagram relevant to this subc
 
 - `training_linear.json`: lists the learning modules that support the NG-SOC automation scenario in subcase 1d, including step-by-step activities and the tools involved.
 - `topology.yml`: KYPO-compatible topology for the NG-SOC exercise sandbox, matching the provisioning descriptors.
-- `docs/`: support materials and complementary guides. `docs/provisioning-guide.md` explains how to deploy the infrastructure required for subcase 1d.
+- `docs/`: support materials and complementary guides. `docs/deployment-prerequisites.md`, `docs/artifacts.md` and `docs/provisioning-guide.md` document platform prerequisites, external artifacts and reproducible deployment steps for subcase 1d.
 - `inventory.sample`: canonical subcase 1d inventory template with the host groups `ng-soc`, `ng-siem`, `ng-soar`, `cti-ss`, `cicms-operator`, `playbook-library` and `telemetry-feeder`. Provide secrets at runtime via environment variables or Ansible Vault (do not commit credentials).
 - `provisioning/`: KYPO/CRCZ topology files and Ansible playbooks that replicate the infrastructure defined in the CYNET activity diagram for the 1d flow.
 - Docker-based services in subcase 1d are implemented with a **selective decomposition** of upstream `ng-soc-ansible` `docker_server` tasks into local roles (`cti-ss`, `cicms`, `ng-siem`, `ng-soar`), not by importing a monolithic `docker_server` role.
@@ -85,3 +85,14 @@ For subcase 1d provisioning, keep these external runtime dependencies available:
 ## Licence
 
 The content is provided strictly for educational purposes.
+
+
+## Reproducible control-node setup and preflight
+
+```bash
+./scripts/bootstrap-control-node.sh
+source .venv/bin/activate
+./scripts/preflight.sh
+```
+
+Use `inventory.example.ini`, `.env.example` and `vault.example.yml` as secure templates.

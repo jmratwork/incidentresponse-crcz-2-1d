@@ -1,27 +1,16 @@
 ---
+- name: Validate ng-soar install mode
+  ansible.builtin.assert:
+    that:
+      - ng_soar_install_mode in ['preinstalled', 'package', 'container', 'artifact']
+    fail_msg: "ng_soar_install_mode={{ ng_soar_install_mode }} inválido. Usa preinstalled|package|container|artifact."
+
 - name: Validate NG-SOAR sensitive secrets
   ansible.builtin.assert:
     that:
-      - (ng_soar_integrations | default([]))
-        | selectattr('name', 'equalto', 'siem_ingest')
-        | map(attribute='token')
-        | first
-        | default('')
-        | string
-        | trim
-        | length > 0
-      - ((ng_soar_integrations | default([]))
-        | selectattr('name', 'equalto', 'siem_ingest')
-        | map(attribute='token')
-        | first
-        | default('')
-        | string
-        | trim
-        | lower) != 'changeme'
-    fail_msg: >-
-      Debes sobreescribir `ng_soar_integrations[siem_ingest].token` con un
-      secreto real (por ejemplo usando Ansible Vault o `lookup('env', 'NG_SOAR_SIEM_INGEST_TOKEN')`).
-    success_msg: Secretos de NG-SOAR validados.
+      - (ng_soar_integrations | default([])) | selectattr('name', 'equalto', 'siem_ingest') | map(attribute='token') | first | default('') | string | trim | length > 0
+      - ((ng_soar_integrations | default([])) | selectattr('name', 'equalto', 'siem_ingest') | map(attribute='token') | first | default('') | string | trim | lower) != 'changeme'
+    fail_msg: "Falta secreto real para ng_soar_integrations[siem_ingest].token (Vault o NG_SOAR_SIEM_INGEST_TOKEN)."
     quiet: true
   no_log: true
 
@@ -60,12 +49,19 @@
     path: "{{ ng_soarctl_binary_path }}"
   register: ng_soarctl
 
+- name: Assert ng-soarctl exists for non-container mode
+  ansible.builtin.assert:
+    that:
+      - ng_soarctl.stat.exists
+    fail_msg: "Falta {{ ng_soarctl_binary_path }} en host {{ inventory_hostname }} para install_mode={{ ng_soar_install_mode }}"
+  when: ng_soar_install_mode in ['preinstalled', 'package']
+
 - name: Validate ng-soar queues
   ansible.builtin.command: "{{ ng_soarctl_binary_path }} validate --config {{ ng_soar_queue_config }}"
   register: ng_soar_validation
   changed_when: false
   failed_when: ng_soar_validation.rc != 0
-  when: ng_soarctl.stat.exists
+  when: ng_soar_install_mode in ['preinstalled', 'package']
 
 - name: Check ng-soar API health
   ansible.builtin.uri:
@@ -75,8 +71,8 @@
   register: ng_soar_health
   failed_when: ng_soar_health.status != ng_soar_healthcheck.status_code
   changed_when: false
-  when: ng_soarctl.stat.exists
+  when: ng_soar_install_mode in ['preinstalled', 'package']
 
 - name: Deploy NG-SOAR container stack
   ansible.builtin.import_tasks: docker-deploy.yml
-  when: ng_soar_containerized | bool
+  when: ng_soar_install_mode in ['container', 'artifact']
