@@ -33,7 +33,8 @@ See Figure 6 for the segment of the CYNET activity diagram relevant to this subc
 ## Key files
 
 - `training_linear.json`: lists the learning modules that support the NG-SOC automation scenario in subcase 1d, including step-by-step activities and the tools involved.
-- `topology.yml`: KYPO-compatible topology for the NG-SOC exercise sandbox, matching the provisioning descriptors.
+- `topology.yml`: **default low-footprint** KYPO-compatible topology for the NG-SOC exercise sandbox (recommended for reduced CyberRangeCZ pools), matching the provisioning descriptors.
+- `topology.full.yml`: full-capacity topology profile (keeps `ng-soc` as `standard.medium`) for pools with larger quotas.
 - `docs/`: support materials and complementary guides. `docs/deployment-prerequisites.md`, `docs/artifacts.md` and `docs/provisioning-guide.md` document platform prerequisites, external artifacts and reproducible deployment steps for subcase 1d.
 - `inventory.sample`: canonical subcase 1d inventory template with the host groups `ng-soc`, `ng-siem`, `ng-soar`, `cti-ss`, `cicms-operator`, `playbook-library` and `telemetry-feeder`. Provide secrets at runtime via environment variables or Ansible Vault (do not commit credentials).
 - `provisioning/`: KYPO/CRCZ topology files and Ansible playbooks that replicate the infrastructure defined in the CYNET activity diagram for the 1d flow.
@@ -55,6 +56,7 @@ The tests verify that:
 - The KYPO topologies in `provisioning/` reference valid hosts, routers and networks in their mapping sections.
 - `inventory.sample` is automatically checked against `topology.yml` for required host groups, host names and `ansible_host` IPs to prevent inventory/topology drift.
 - `topology.yml` is automatically checked against `provisioning/case-1d/topology.yml` so host/IP mappings stay coherent across both topology descriptors.
+- low-footprint/full topology profiles preserve host names and IP mappings, while only changing capacity flavoring where documented.
 - The Jinja role templates under `provisioning/roles` and `provisioning/case-1d/provisioning/roles` render correctly, including quoting edge cases in TAXII configuration fields.
 
 ## Credential management
@@ -81,6 +83,17 @@ For subcase 1d provisioning, keep these external runtime dependencies available:
 - Docker Hub credential variables (`CTI_SS_REGISTRY_USERNAME`, `CTI_SS_REGISTRY_PASSWORD`, `CICMS_DOCKER_PASSWORD`).
 - SMB/CIFS share content required by containerized roles (for example `dfir-iris-custom.zip`).
 - `community.docker` Ansible collection installed on the control node.
+
+## Topology profile selection (CyberRangeCZ)
+
+- **Low-footprint (default, recommended):**
+  - Root file: `topology.yml`
+  - Provisioning import file: `provisioning/case-1d/topology.yml`
+  - Uses `standard.small` for `ng-soc` to reduce scheduler pressure in constrained pools.
+- **Full profile (higher quota required):**
+  - Root file: `topology.full.yml`
+  - Provisioning import file: `provisioning/case-1d/topology.full.yml`
+  - Keeps `ng-soc` at `standard.medium`.
 
 ## Licence
 

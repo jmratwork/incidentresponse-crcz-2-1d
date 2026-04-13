@@ -69,7 +69,9 @@ def test_training_linear_structure(training_data):
     "topology_path",
     [
         REPO_ROOT / "topology.yml",
+        REPO_ROOT / "topology.full.yml",
         REPO_ROOT / "provisioning" / "case-1d" / "topology.yml",
+        REPO_ROOT / "provisioning" / "case-1d" / "topology.full.yml",
     ],
 )
 def test_kypo_topologies(topology_path):
@@ -218,6 +220,11 @@ def _host_ips_from_topology(path: Path) -> dict[str, str]:
     return ips
 
 
+def _host_flavors_from_topology(path: Path) -> dict[str, str]:
+    data = _load_yaml(path)
+    return {host["name"]: host["flavor"] for host in data.get("hosts", [])}
+
+
 def _parse_inventory_ini(path: Path) -> tuple[set[str], dict[str, str]]:
     groups: set[str] = set()
     host_ips: dict[str, str] = {}
@@ -340,3 +347,18 @@ def test_topology_yml_matches_case_1d_topology():
         f"Topology IP drift detected between {primary_path} and {case_path}: "
         f"{'; '.join(mismatched_ips)}"
     )
+
+
+def test_full_profile_matches_low_footprint_host_and_ip_layout():
+    low_path = REPO_ROOT / "topology.yml"
+    full_path = REPO_ROOT / "topology.full.yml"
+    low_case_path = REPO_ROOT / "provisioning" / "case-1d" / "topology.yml"
+    full_case_path = REPO_ROOT / "provisioning" / "case-1d" / "topology.full.yml"
+
+    assert _host_ips_from_topology(low_path) == _host_ips_from_topology(full_path)
+    assert _host_ips_from_topology(low_case_path) == _host_ips_from_topology(full_case_path)
+
+    low_flavors = _host_flavors_from_topology(low_path)
+    full_flavors = _host_flavors_from_topology(full_path)
+    assert low_flavors["ng-soc"] == "standard.small"
+    assert full_flavors["ng-soc"] == "standard.medium"
