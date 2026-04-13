@@ -360,5 +360,6 @@ def test_full_profile_matches_low_footprint_host_and_ip_layout():
 
     low_flavors = _host_flavors_from_topology(low_path)
     full_flavors = _host_flavors_from_topology(full_path)
-    assert low_flavors["ng-soc"] == "standard.small"
+    assert set(low_flavors.values()) == {"standard.tiny"}
+    assert low_flavors["ng-soc"] == "standard.tiny"
     assert full_flavors["ng-soc"] == "standard.medium"

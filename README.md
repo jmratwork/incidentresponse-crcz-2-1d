@@ -34,7 +34,7 @@ See Figure 6 for the segment of the CYNET activity diagram relevant to this subc
 
 - `training_linear.json`: lists the learning modules that support the NG-SOC automation scenario in subcase 1d, including step-by-step activities and the tools involved.
 - `topology.yml`: **default low-footprint** KYPO-compatible topology for the NG-SOC exercise sandbox (recommended for reduced CyberRangeCZ pools), matching the provisioning descriptors.
-- `topology.full.yml`: full-capacity topology profile (keeps `ng-soc` as `standard.medium`) for pools with larger quotas.
+- `topology.full.yml`: full-capacity topology profile (keeps `ng-soc` as `standard.medium` and remaining nodes as `standard.small`) for pools with larger quotas.
 - `docs/`: support materials and complementary guides. `docs/deployment-prerequisites.md`, `docs/artifacts.md` and `docs/provisioning-guide.md` document platform prerequisites, external artifacts and reproducible deployment steps for subcase 1d.
 - `inventory.sample`: canonical subcase 1d inventory template with the host groups `ng-soc`, `ng-siem`, `ng-soar`, `cti-ss`, `cicms-operator`, `playbook-library` and `telemetry-feeder`. Provide secrets at runtime via environment variables or Ansible Vault (do not commit credentials).
 - `provisioning/`: KYPO/CRCZ topology files and Ansible playbooks that replicate the infrastructure defined in the CYNET activity diagram for the 1d flow.
@@ -89,7 +89,7 @@ For subcase 1d provisioning, keep these external runtime dependencies available:
 - **Low-footprint (default, recommended):**
   - Root file: `topology.yml`
   - Provisioning import file: `provisioning/case-1d/topology.yml`
-  - Uses `standard.small` for `ng-soc` to reduce scheduler pressure in constrained pools.
+  - Uses `standard.tiny` across all hosts (including `ng-soc`) to reduce scheduler pressure in constrained pools.
 - **Full profile (higher quota required):**
   - Root file: `topology.full.yml`
   - Provisioning import file: `provisioning/case-1d/topology.full.yml`
