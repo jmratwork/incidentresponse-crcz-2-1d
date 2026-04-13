@@ -1,0 +1,12 @@
+---
+# Encrypt this file with ansible-vault before use.
+cti_ss_taxii_siem_ingestor_password: ""
+cti_ss_taxii_telemetry_feeder_password: ""
+ng_siem_taxii_password: ""
+ng_soar_siem_ingest_token: ""
+telemetry_feeder_taxii_password: ""
+cti_ss_registry_username: ""
+cti_ss_registry_password: ""
+cicms_registry:
+  username: ""
+  password: ""

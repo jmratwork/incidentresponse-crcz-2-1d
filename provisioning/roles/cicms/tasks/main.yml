@@ -1,4 +1,10 @@
 ---
+- name: Validate cicms install mode
+  ansible.builtin.assert:
+    that:
+      - cicms_install_mode in ['preinstalled', 'package', 'container', 'artifact']
+    fail_msg: "cicms_install_mode={{ cicms_install_mode }} inválido."
+
 - name: Validate CICMS sensitive secrets
   ansible.builtin.assert:
     that:
@@ -116,20 +122,23 @@
   ansible.builtin.file:
     path: /etc/apt/keyrings
     state: directory
-    mode: "0755"
+    mode: '0755'
 
 - name: Download Docker GPG key
   ansible.builtin.get_url:
     url: "{{ cicms_docker_apt_gpg_url }}"
     dest: /etc/apt/keyrings/docker.asc
-    mode: "0644"
+    mode: '0644'
 
 - name: Add Docker APT repository
   ansible.builtin.apt_repository:
     repo: "{{ cicms_docker_apt_repo }}"
-    state: present
     filename: docker
-    update_cache: true
+    state: present
+
+- name: Update APT cache after adding repository
+  ansible.builtin.apt:
+    update_cache: yes
 
 - name: Install Docker packages
   ansible.builtin.apt:
@@ -140,13 +149,13 @@
       - docker-buildx-plugin
       - docker-compose-plugin
     state: present
-    update_cache: true
+    update_cache: yes
 
 - name: Ensure Docker service is started and enabled
   ansible.builtin.service:
     name: docker
     state: started
-    enabled: true
+    enabled: yes
 
 - name: Create mount point
   ansible.builtin.file:
@@ -178,61 +187,72 @@
 
 - name: Login to Docker Hub
   community.docker.docker_login:
-    registry_url: "{{ cicms_registry.url }}"
     username: "{{ cicms_registry.username }}"
     password: "{{ cicms_registry.password }}"
-  when: cicms_registry.username | length > 0
   no_log: true
-
-- name: Initialize CICMS MISP API key fact
-  ansible.builtin.set_fact:
-    cicms_misp_api_key: "{{ cicms_misp_api_key | default('', true) }}"
-  no_log: true
-
-- name: Resolve MISP API key source for CICMS
-  ansible.builtin.set_fact:
-    cicms_misp_api_key: "{{ hostvars[cicms_misp_api_key_host][cicms_misp_api_key_fact_name] | default('', true) }}"
-  when: cicms_misp_api_key_host in hostvars
-  no_log: true
-
-- name: Build fallback list of CTI-SS hosts for MISP API key lookup
-  ansible.builtin.set_fact:
-    cicms_misp_api_key_source_hosts: "{{ (groups.get('cti-ss', []) + groups.get('cti_ss', [])) | unique }}"
-  when: cicms_misp_api_key | default('') | length == 0
-  no_log: true
-
-- name: Resolve MISP API key from CTI-SS host facts
-  ansible.builtin.set_fact:
-    cicms_misp_api_key: "{{ hostvars[item][cicms_misp_api_key_fact_name] | default('', true) }}"
-  loop: "{{ cicms_misp_api_key_source_hosts | default([]) }}"
   when:
-    - cicms_misp_api_key | default('') | length == 0
-    - hostvars[item][cicms_misp_api_key_fact_name] | default('') | length > 0
-  no_log: true
+    - cicms_registry is defined
+    - cicms_registry.username is defined
+    - cicms_registry.password is defined
+    - cicms_registry.username | length > 0
+    - cicms_registry.password | length > 0
 
-- name: Ensure MISP API key is available from cti-ss role
+- name: Determine MISP fact source host
+  ansible.builtin.set_fact:
+    cicms_misp_source_host: >-
+      {{
+        (
+          cicms_misp_fact_source.host
+          if cicms_misp_fact_source.host in hostvars
+          else (
+            groups[cicms_misp_fact_source.host][0]
+            if (
+              cicms_misp_fact_source.host in groups
+              and (groups[cicms_misp_fact_source.host] | length) > 0
+            )
+            else ''
+          )
+        )
+      }}
+
+- name: Resolve MISP API key exported by cti-ss
+  ansible.builtin.set_fact:
+    cicms_misp_api_key: >-
+      {{
+        (
+          hostvars[cicms_misp_source_host][cicms_misp_fact_source.preferred_key]
+          | default(hostvars[cicms_misp_source_host][cicms_misp_fact_source.fallback_key], true)
+          | default('', true)
+        )
+        if (cicms_misp_source_host | length > 0)
+        else ''
+      }}
+
+- name: Validate MISP API key availability
   ansible.builtin.assert:
     that:
       - cicms_misp_api_key | length > 0
-    fail_msg: "MISP API key missing. Run cti-ss in the same playbook (or configure fact caching) before cicms."
+    fail_msg: >-
+      MISP API key not found. Ensure {{ cicms_misp_source_host | default(cicms_misp_fact_source.host, true) }}
+      exports {{ cicms_misp_fact_source.preferred_key }} (or {{ cicms_misp_fact_source.fallback_key }}).
 
 - name: Inject MISP integration settings into DFIR-IRIS .env
   ansible.builtin.lineinfile:
-    path: "{{ cicms_dfir_env_file }}"
+    path: "{{ cicms_dfir_project_dir }}/.env"
     regexp: '^IRIS_MISP_URL='
     line: "IRIS_MISP_URL={{ cicms_iris_misp_url }}"
     state: present
 
 - name: Disable SSL verification for MISP connection
   ansible.builtin.lineinfile:
-    path: "{{ cicms_dfir_env_file }}"
+    path: "{{ cicms_dfir_project_dir }}/.env"
     regexp: '^IRIS_MISP_VERIFY_CERT='
-    line: "IRIS_MISP_VERIFY_CERT={{ cicms_iris_misp_verify_cert | ternary('true', 'false') }}"
+    line: "IRIS_MISP_VERIFY_CERT={{ cicms_iris_misp_verify_cert | string | lower }}"
     state: present
 
 - name: Inject MISP key into DFIR-IRIS .env
   ansible.builtin.lineinfile:
-    path: "{{ cicms_dfir_env_file }}"
+    path: "{{ cicms_dfir_project_dir }}/.env"
     regexp: '^IRIS_MISP_KEY='
     line: "IRIS_MISP_KEY={{ cicms_misp_api_key }}"
     state: present
@@ -254,3 +274,4 @@
   ansible.builtin.mount:
     path: "{{ cicms_compose_source.mount_point }}"
     state: unmounted
+  when: true

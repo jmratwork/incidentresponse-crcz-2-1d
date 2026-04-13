@@ -1,3 +1,9 @@
+---
+- name: Validate telemetry-feeder install mode
+  ansible.builtin.assert:
+    that:
+      - telemetry_feeder_install_mode in ['preinstalled', 'package', 'container', 'artifact']
+
 - name: Validate telemetry-feeder sensitive secrets
   ansible.builtin.assert:
     that:

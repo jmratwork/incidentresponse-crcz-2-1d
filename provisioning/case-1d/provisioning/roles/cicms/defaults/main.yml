@@ -1,4 +1,5 @@
 ---
+cicms_install_mode: artifact
 cicms_nginx_site:
   listen: 8443
   server_name: cicms.internal

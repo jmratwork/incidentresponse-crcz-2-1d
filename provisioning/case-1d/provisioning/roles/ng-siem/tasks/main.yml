@@ -1,27 +1,16 @@
 ---
+- name: Validate ng-siem install mode
+  ansible.builtin.assert:
+    that:
+      - ng_siem_install_mode in ['preinstalled', 'package', 'container', 'artifact']
+    fail_msg: "ng_siem_install_mode={{ ng_siem_install_mode }} inválido. Usa preinstalled|package|container|artifact."
+
 - name: Validate NG-SIEM sensitive secrets
   ansible.builtin.assert:
     that:
-      - (ng_siem_pipeline.sources | default([]))
-        | selectattr('name', 'equalto', 'cti_taxii')
-        | map(attribute='password')
-        | first
-        | default('')
-        | string
-        | trim
-        | length > 0
-      - ((ng_siem_pipeline.sources | default([]))
-        | selectattr('name', 'equalto', 'cti_taxii')
-        | map(attribute='password')
-        | first
-        | default('')
-        | string
-        | trim
-        | lower) != 'changeme'
-    fail_msg: >-
-      Debes sobreescribir `ng_siem_pipeline.sources[cti_taxii].password` con un
-      secreto real (por ejemplo usando Ansible Vault o `lookup('env', 'NG_SIEM_TAXII_PASSWORD')`).
-    success_msg: Secretos de NG-SIEM validados.
+      - (ng_siem_pipeline.sources | default([])) | selectattr('name', 'equalto', 'cti_taxii') | map(attribute='password') | first | default('') | string | trim | length > 0
+      - ((ng_siem_pipeline.sources | default([])) | selectattr('name', 'equalto', 'cti_taxii') | map(attribute='password') | first | default('') | string | trim | lower) != 'changeme'
+    fail_msg: "Falta secreto real para ng_siem_pipeline.sources[cti_taxii].password (Vault o NG_SIEM_TAXII_PASSWORD)."
     quiet: true
   no_log: true
 
@@ -50,12 +39,19 @@
 
 - name: Deploy NG-SIEM container stack
   ansible.builtin.import_tasks: docker-deploy.yml
-  when: ng_siem_containerized | bool
+  when: ng_siem_install_mode in ['container', 'artifact']
 
 - name: Check for ng-siemctl binary
   ansible.builtin.stat:
     path: "{{ ng_siemctl_path }}"
   register: ng_siemctl_binary
+
+- name: Assert ng-siemctl exists for non-container mode
+  ansible.builtin.assert:
+    that:
+      - ng_siemctl_binary.stat.exists
+    fail_msg: "Falta {{ ng_siemctl_path }} en host {{ inventory_hostname }} para install_mode={{ ng_siem_install_mode }}"
+  when: ng_siem_install_mode in ['preinstalled', 'package']
 
 - name: Validate ng-siem pipeline configuration
   ansible.builtin.command:
@@ -63,11 +59,24 @@
   register: ng_siem_lint
   changed_when: false
   failed_when: ng_siem_lint.rc != 0
-  when: ng_siemctl_binary.stat.exists
+  when: ng_siem_install_mode in ['preinstalled', 'package']
 
 - name: Check ng-siem pipeline status
   ansible.builtin.command: "{{ ng_siem_healthcheck.command }}"
   register: ng_siem_status
   changed_when: false
   failed_when: ng_siem_status.rc != 0 or 'healthy' not in ng_siem_status.stdout.lower()
-  when: ng_siemctl_binary.stat.exists
+  when: ng_siem_install_mode in ['preinstalled', 'package']
+
+- name: Validate NG-SIEM compose availability in container mode
+  ansible.builtin.stat:
+    path: "{{ ng_siem_compose_source.destination_dir }}/docker-compose.yml"
+  register: ng_siem_compose_file_final
+  when: ng_siem_install_mode in ['container', 'artifact']
+
+- name: Assert NG-SIEM compose file exists
+  ansible.builtin.assert:
+    that:
+      - ng_siem_compose_file_final.stat.exists
+    fail_msg: "No existe docker-compose.yml de NG-SIEM en {{ ng_siem_compose_source.destination_dir }} para install_mode={{ ng_siem_install_mode }}"
+  when: ng_siem_install_mode in ['container', 'artifact']

@@ -1,4 +1,9 @@
 ---
+- name: Validate ng-soc install mode
+  ansible.builtin.assert:
+    that:
+      - ng_soc_install_mode in ['preinstalled', 'package', 'container', 'artifact']
+
 - name: Ensure ng-soc system group exists
   ansible.builtin.group:
     name: ng-soc
@@ -37,7 +42,7 @@
   ansible.builtin.uri:
     url: "{{ ng_soc_healthcheck.url }}"
     method: GET
-    status_code: {{ ng_soc_healthcheck.status_code | int }}
+    status_code: "{{ ng_soc_healthcheck.status_code | int }}"
   register: ng_soc_health
   failed_when: ng_soc_health.status != ng_soc_healthcheck.status_code
   changed_when: false

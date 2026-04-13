@@ -1,4 +1,10 @@
 ---
+- name: Validate cicms install mode
+  ansible.builtin.assert:
+    that:
+      - cicms_install_mode in ['preinstalled', 'package', 'container', 'artifact']
+    fail_msg: "cicms_install_mode={{ cicms_install_mode }} inválido."
+
 - name: Validate CICMS sensitive secrets
   ansible.builtin.assert:
     that:

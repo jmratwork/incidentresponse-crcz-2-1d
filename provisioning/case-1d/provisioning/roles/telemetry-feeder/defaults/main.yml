@@ -1,4 +1,5 @@
 ---
+telemetry_feeder_install_mode: preinstalled
 telemetry_feeder_agent_config: /etc/telemetry-feeder/agent.yaml
 telemetry_feeder_agent:
   buffers:

@@ -1,4 +1,5 @@
 ---
+cti_ss_install_mode: container
 cti_ss_taxii_config: /etc/cti-ss/taxii.yaml
 cti_ss_taxii_collections:
   - id: rep-threats

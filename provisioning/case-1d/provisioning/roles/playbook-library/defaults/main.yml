@@ -1,4 +1,5 @@
 ---
+playbook_library_install_mode: preinstalled
 playbook_library_root: /srv/playbooks
 playbook_library_metadata: /srv/playbooks/index.json
 playbook_library_playbooks:
