@@ -1,4 +1,7 @@
 ---
+- name: Collect service facts for ng-soc handler
+  ansible.builtin.service_facts:
+
 - name: reload ng-soc dashboard
   ansible.builtin.service:
     name: ng-soc
