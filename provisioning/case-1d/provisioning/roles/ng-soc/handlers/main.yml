@@ -1,5 +1,11 @@
 ---
+- name: Collect service facts for ng-soc handler
+  ansible.builtin.service_facts:
+
 - name: reload ng-soc dashboard
   ansible.builtin.service:
     name: ng-soc
     state: reloaded
+  when:
+    - ansible_facts.services is defined
+    - "'ng-soc.service' in ansible_facts.services or 'ng-soc' in ansible_facts.services"
